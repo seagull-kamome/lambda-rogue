@@ -270,6 +270,8 @@ messageTemplatesJa =
   , ("found-trap-unknown", "罠を見つけた。")
   , ("search-nothing", "探したが何も見つからなかった。")
   , ("held-in-place", "その場に拘束されている。")
+  , ("cannot-pick-up-levitating", "浮遊中は床の物に手が届かない。")
+  , ("cannot-use-stairs-levitating", "浮遊中は階段を使えない。")
   , ("wall-there", "そこは壁だ。")
   , ("door-locked", "扉には鍵がかかっている。")
   , ("not-on-stairs", "{}への階段の上に立っていない。")

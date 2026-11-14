@@ -386,6 +386,27 @@ levitationTests = do
     (grounded.game.player.hp < trapped.player.hp
      && revealedAt (MkCoord 5 5) grounded.game)
 
+  let floorFood : Item
+      floorFood = MkItem 700 (Food FoodRation)
+                         (OnFloor 1 (MkCoord 4 5)) 1 0 False 0 False
+      withFood = setItems [floorFood] base
+      floatingFood = withStatus Levitated 10 withFood
+      outPick = step PickUp floatingFood
+  check "levitation prevents picking up items"
+    (outPick.game.player.inventory == floatingFood.player.inventory
+     && itemLocationOf 700 outPick.game == Just (OnFloor 1 (MkCoord 4 5)))
+  check "a floating pickup says why"
+    (hasMessage "You cannot reach the floor while floating." outPick)
+
+  let onDown = setTileAt (MkCoord 4 5) (Stairs Down) base
+      floatingDown = withStatus Levitated 10 onDown
+      outFloatDown = step Descend floatingDown
+  check "levitation prevents using stairs"
+    (outFloatDown.game.depth == floatingDown.depth
+     && hasMessage "You cannot use stairs while floating." outFloatDown)
+  check "the same stairs work without levitation"
+    ((step Descend onDown).game.depth == 2)
+
 waitTimes : Nat -> Game -> Game
 waitTimes Z g = g
 waitTimes (S n) g = waitTimes n (step Wait g).game

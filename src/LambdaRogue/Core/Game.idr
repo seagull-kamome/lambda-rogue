@@ -878,55 +878,59 @@ playerMove d st =
 
 stairsAction : StairDir -> Step -> Step
 stairsAction dir st =
-  let g = st.game
-      lvl = currentLevel g
-  in case tileAt lvl.tiles g.player.pos of
-       Just (Stairs d) =>
-         if d == dir
-            then case dir of
-                   Down => descendLevel st
-                   Up => ascendLevel st
-            else say WarningMsg (NotOnStairs dir) st
-       _ => say WarningMsg (NotOnStairs dir) st
+  if hasStatus Levitated st.game.player
+     then say WarningMsg CannotUseStairsLevitating st
+     else let g = st.game
+              lvl = currentLevel g
+          in case tileAt lvl.tiles g.player.pos of
+               Just (Stairs d) =>
+                 if d == dir
+                    then case dir of
+                           Down => descendLevel st
+                           Up => ascendLevel st
+                    else say WarningMsg (NotOnStairs dir) st
+               _ => say WarningMsg (NotOnStairs dir) st
 
 pickUp : Step -> Step
 pickUp st =
-  case itemAt st.game st.game.player.pos of
-    Nothing => say WarningMsg NothingHere st
-    Just it =>
-      case it.kind of
-        Gold =>
-          let g = st.game
-              items' : List Item
-              items' = filter (\i => i.id /= it.id) g.items
-              player' : Player
-              player' = { gold := g.player.gold + it.count } g.player
-              g' : Game
-              g' = { items := items', player := player' } g
-          in event (ItemPicked it.id)
-               (consume (say ItemMsg
-                 (PickUpGold it.count)
-                 ({ game := g' } st)))
-        _ =>
-          if length st.game.player.inventory >= maxPack
-             then say WarningMsg PackFull st
-             else let g = st.game
-                      items' : List Item
-                      items' = map (\i => if i.id == it.id
-                                             then { location := InPack } i
-                                             else i)
-                                   g.items
-                      player' : Player
-                      player' = { inventory := it.id :: g.player.inventory }
-                                  g.player
-                      g' : Game
-                      g' = { items := items', player := player' } g
-                      shown = itemDisplayNameIn g' it
-                      message = if it.kind == Amulet
-                                   then PickUpAmulet
-                                   else PickUpItem shown
-                  in event (ItemPicked it.id)
-                       (consume (say ItemMsg message ({ game := g' } st)))
+  if hasStatus Levitated st.game.player
+     then say WarningMsg CannotPickUpLevitating st
+     else case itemAt st.game st.game.player.pos of
+       Nothing => say WarningMsg NothingHere st
+       Just it =>
+         case it.kind of
+           Gold =>
+             let g = st.game
+                 items' : List Item
+                 items' = filter (\i => i.id /= it.id) g.items
+                 player' : Player
+                 player' = { gold := g.player.gold + it.count } g.player
+                 g' : Game
+                 g' = { items := items', player := player' } g
+             in event (ItemPicked it.id)
+                  (consume (say ItemMsg
+                    (PickUpGold it.count)
+                    ({ game := g' } st)))
+           _ =>
+             if length st.game.player.inventory >= maxPack
+                then say WarningMsg PackFull st
+                else let g = st.game
+                         items' : List Item
+                         items' = map (\i => if i.id == it.id
+                                                then { location := InPack } i
+                                                else i)
+                                      g.items
+                         player' : Player
+                         player' = { inventory := it.id :: g.player.inventory }
+                                     g.player
+                         g' : Game
+                         g' = { items := items', player := player' } g
+                         shown = itemDisplayNameIn g' it
+                         message = if it.kind == Amulet
+                                      then PickUpAmulet
+                                      else PickUpItem shown
+                     in event (ItemPicked it.id)
+                          (consume (say ItemMsg message ({ game := g' } st)))
 
 applyPotion : PotionKind -> Step -> Step
 applyPotion PotionHealing st =

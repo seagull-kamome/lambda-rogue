@@ -75,6 +75,8 @@ data Msg
   | FoundTrapUnknown
   | SearchNothing
   | HeldInPlace
+  | CannotPickUpLevitating
+  | CannotUseStairsLevitating
   | WallThere
   | DoorLocked
   | NotOnStairs StairDir
@@ -320,6 +322,8 @@ msgEn (FoundTrap kind) = trapFoundEn kind
 msgEn FoundTrapUnknown = "You found a trap."
 msgEn SearchNothing = "You search but find nothing."
 msgEn HeldInPlace = "You are held in place."
+msgEn CannotPickUpLevitating = "You cannot reach the floor while floating."
+msgEn CannotUseStairsLevitating = "You cannot use stairs while floating."
 msgEn WallThere = "There is a wall there."
 msgEn DoorLocked = "The door is locked."
 msgEn (NotOnStairs dir) =
@@ -491,6 +495,8 @@ msgKey (FoundTrap _) = "found-trap"
 msgKey FoundTrapUnknown = "found-trap-unknown"
 msgKey SearchNothing = "search-nothing"
 msgKey HeldInPlace = "held-in-place"
+msgKey CannotPickUpLevitating = "cannot-pick-up-levitating"
+msgKey CannotUseStairsLevitating = "cannot-use-stairs-levitating"
 msgKey WallThere = "wall-there"
 msgKey DoorLocked = "door-locked"
 msgKey (NotOnStairs _) = "not-on-stairs"
@@ -640,6 +646,8 @@ msgArgs (FoundTrap kind) = [show kind]
 msgArgs FoundTrapUnknown = []
 msgArgs SearchNothing = []
 msgArgs HeldInPlace = []
+msgArgs CannotPickUpLevitating = []
+msgArgs CannotUseStairsLevitating = []
 msgArgs WallThere = []
 msgArgs DoorLocked = []
 msgArgs (NotOnStairs dir) = [stairArg dir]
@@ -801,6 +809,8 @@ sampleMessages =
   , FoundTrapUnknown
   , SearchNothing
   , HeldInPlace
+  , CannotPickUpLevitating
+  , CannotUseStairsLevitating
   , WallThere
   , DoorLocked
   , NotOnStairs Up

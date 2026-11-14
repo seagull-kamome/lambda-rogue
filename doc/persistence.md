@@ -1,9 +1,9 @@
 # lambda-rogue 永続化・リプレイ設計
 
-- Status: Draft 0.15（M5 スライス 13 の飢餓失神を反映。`hunger` は `-850` 超を許可）
+- Status: Draft 0.16（M5 スライス 14 の浮遊メッセージを反映。セーブ形式は変更なし）
 - Date: 2026-11-14
 - 対象: `LambdaRogue.Persist.*`, `LambdaRogue.Core.Replay`
-- 前提: `doc/design.md` Draft 1.24, `doc/core-api.md` Draft 1.18
+- 前提: `doc/design.md` Draft 1.25, `doc/core-api.md` Draft 1.19
 
 ## 1. 方針
 
