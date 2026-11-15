@@ -1,9 +1,9 @@
 # lambda-rogue 永続化・リプレイ設計
 
-- Status: Draft 0.18（M5 スライス 16 の slime mold を反映。セーブ形式は変更なし）
+- Status: Draft 0.19（M5 スライス 17 の回復ポーションを反映。セーブ形式は変更なし）
 - Date: 2026-11-15
 - 対象: `LambdaRogue.Persist.*`, `LambdaRogue.Core.Replay`
-- 前提: `doc/design.md` Draft 1.27, `doc/core-api.md` Draft 1.21
+- 前提: `doc/design.md` Draft 1.28, `doc/core-api.md` Draft 1.22
 
 ## 1. 方針
 

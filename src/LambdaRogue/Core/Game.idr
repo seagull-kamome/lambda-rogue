@@ -201,6 +201,19 @@ addStatus k turns p =
   { statuses := MkStatus k (max 1 turns)
                 :: filter (\s => s.statusKind /= k) p.statuses } p
 
+||| Healing potions cure the mind-affecting statuses named in the Rogue
+||| Vade-Mecum: blindness, confusion and hallucination.
+cureSenses : Player -> Player
+cureSenses p =
+  { statuses := filter (\s => s.statusKind /= Blinded
+                           && s.statusKind /= Confused
+                           && s.statusKind /= Hallucinating) p.statuses } p
+
+||| A potion of see invisible also cures blindness in version 5.
+cureBlindness : Player -> Player
+cureBlindness p =
+  { statuses := filter (\s => s.statusKind /= Blinded) p.statuses } p
+
 directions : List Dir
 directions = [N, NE, E, SE, S, SW, W, NW]
 
@@ -948,7 +961,7 @@ applyPotion PotionHealing st =
       maxHp' : Int32
       maxHp' = if healed > p.maxHp then p.maxHp + 1 else p.maxHp
       p' : Player
-      p' = { hp := hp', maxHp := maxHp' } p
+      p' = cureSenses ({ hp := hp', maxHp := maxHp' } p)
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg FeelBetter (setPlayer p' ({ game := g } st))
@@ -966,7 +979,7 @@ applyPotion PotionExtraHealing st =
       hp' : Int32
       hp' = if boosted then maxHp' else healed
       p' : Player
-      p' = { hp := hp', maxHp := maxHp' } p
+      p' = cureSenses ({ hp := hp', maxHp := maxHp' } p)
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg FeelMuchBetter (setPlayer p' ({ game := g } st))
@@ -1053,7 +1066,7 @@ applyPotion PotionHasteSelf st =
        (setPlayer p' ({ game := g } st))
 applyPotion PotionSeeInvisible st =
   let (turns, rng') = roll 1 8 st.game.rng
-      p' = addStatus SeeInvisible (turns + 4) st.game.player
+      p' = cureBlindness (addStatus SeeInvisible (turns + 4) st.game.player)
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg EyesStrange (setPlayer p' ({ game := g } st))

@@ -1,6 +1,6 @@
 # Rogue 5.4.4 リファレンス
 
-- Status: Draft 1.16（M5 スライス 16 の slime mold を反映）
+- Status: Draft 1.17（M5 スライス 17 の回復ポーションによる状態解除を反映）
 - Date: 2026-11-15
 - Target: Rogue 5.4.4 (Berkeley Rogue)
 - 目的: lambda-rogue の忠実性の基準を、再現可能な公開データと実装の対応で固定する。
@@ -357,12 +357,12 @@ HP は `レベル d8`（**導出**）。攻撃は `個数 d 面` の並び。
 | hallucination | 8 | 5 | 1d50+20 ターン幻覚 |
 | poison | 8 | 5 | 筋力を 1d3 減らす。sustain strength で無効。幻覚も解除 |
 | gain strength | 13 | 150 | 筋力 +1（最大 31） |
-| see invisible | 3 | 100 | 1d8+4 ターン透明を見る |
-| healing | 13 | 130 | `レベル d4` HP 回復。最大 HP を超えたら最大 HP +1、HP を新しい最大値にする |
+| see invisible | 3 | 100 | 1d8+4 ターン透明を見る。盲目も解除 |
+| healing | 13 | 130 | `レベル d4` HP 回復。最大 HP を超えたら最大 HP +1、HP を新しい最大値にする。盲目・混乱・幻覚を解除 |
 | monster detection | 6 | 130 | 1d8+4 ターン Monster 感知 |
 | magic detection | 6 | 105 | 1d8+4 ターン魔法感知。同階の魔法物品の位置を記憶 |
 | raise level | 2 | 250 | 次のレベルまで経験値を加算し、通常のレベルアップを行う |
-| extra healing | 5 | 200 | `レベル d8` HP 回復。超過時は最大 HP +1、さらに回復量が旧最大 HP + レベル + 1 を超えるなら +2。HP は新しい最大値になる |
+| extra healing | 5 | 200 | `レベル d8` HP 回復。超過時は最大 HP +1、さらに回復量が旧最大 HP + レベル + 1 を超えるなら +2。HP は新しい最大値になる。盲目・混乱・幻覚を解除 |
 | haste self | 5 | 190 | 1d8+4 ターン加速。偶数ターンはモンスターが行動しない |
 | restore strength | 13 | 130 | 筋力を最大値まで戻す |
 | blindness | 5 | 5 | 1d8+4 ターン盲目 |

@@ -61,7 +61,7 @@ export IDRIS2_CFLAGS="-Wno-parentheses-equality"
 ./verify.sh
 ```
 
-This runs a clean build, the full test suite (1053 checks), and a PTY smoke test
+This runs a clean build, the full test suite (1056 checks), and a PTY smoke test
 that starts, draws and quits the executable. Test data is isolated under
 `build/verify-data`; real saves, scores and settings are not touched.
 
@@ -211,7 +211,8 @@ cause fainting and a `-850` nutrition death instead of draining HP. M5 slice
 14 made levitation block picking up items and using stairs. M5 slice 15
 limited the scroll of hold monster to monsters within two paces and made
 attacking a held monster break the hold. M5 slice 16 added slime mold as the
-one-in-ten fruit in the food slot.
+one-in-ten fruit in the food slot. M5 slice 17 made healing potions cure
+blindness, confusion and hallucination, and see invisible cure blindness.
 
 ## Next priorities
 

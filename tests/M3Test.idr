@@ -137,6 +137,28 @@ potionTests = do
     (outExtra.game.player.hp > gExtra.player.hp
      && outExtra.game.player.hp <= outExtra.game.player.maxHp)
 
+  let cureHeal = potion 112 PotionHealing
+      troubled = setPlayerStats
+                   (\p => { hp := 5
+                          , statuses := [ MkStatus Blinded 10
+                                        , MkStatus Confused 5
+                                        , MkStatus Hallucinating 7 ] } p)
+                   (addToPack [cureHeal] base)
+      outCure = step (Quaff 112) troubled
+  check "healing cures blindness, confusion and hallucination"
+    (not (hasStatus Blinded outCure.game.player)
+     && not (hasStatus Confused outCure.game.player)
+     && not (hasStatus Hallucinating outCure.game.player))
+
+  let cureExtra = potion 113 PotionExtraHealing
+      troubledExtra = setPlayerStats
+                        (\p => { hp := 1
+                               , statuses := [MkStatus Blinded 10] } p)
+                        (addToPack [cureExtra] base)
+      outCureExtra = step (Quaff 113) troubledExtra
+  check "extra healing cures blindness"
+    (not (hasStatus Blinded outCureExtra.game.player))
+
   let strength = potion 103 PotionStrength
       gStrength = addToPack [strength] base
       outStrength = step (Quaff 103) gStrength
@@ -187,6 +209,15 @@ potionTests = do
       outSee = step (Quaff 110) (addToPack [see] base)
   check "a see-invisible potion grants the status"
     (hasStatus SeeInvisible outSee.game.player)
+
+  let seeBlind = potion 114 PotionSeeInvisible
+      gSeeBlind = setPlayerStats
+                    (\p => { statuses := [MkStatus Blinded 10] } p)
+                    (addToPack [seeBlind] base)
+      outSeeBlind = step (Quaff 114) gSeeBlind
+  check "see invisible cures blindness"
+    (hasStatus SeeInvisible outSeeBlind.game.player
+     && not (hasStatus Blinded outSeeBlind.game.player))
 
   let raise = potion 111 PotionRaiseLevel
       outRaise = step (Quaff 111) (addToPack [raise] base)
