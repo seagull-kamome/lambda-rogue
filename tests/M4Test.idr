@@ -167,6 +167,13 @@ appearanceTests = do
     (elem (Scroll ScrollProtectArmor) (itemPool 26)
      && elem (Wand WandCancellation) (itemPool 26)
      && elem (Ring RingMaintainArmor) (itemPool 26))
+  check "food generation can produce both rations and slime mold"
+    (let kinds = map (\s => fst (randomItemKind (fromSeed s)))
+                     (the (List Bits64) [1 .. 300])
+     in elem (Just (Food FoodRation)) kinds
+        && elem (Just (Food SlimeMold)) kinds)
+  check "slime mold sells for the same two gold as a ration"
+    (itemGoldValue (Food SlimeMold) == 2)
 
 scrollTests : IO ()
 scrollTests = do

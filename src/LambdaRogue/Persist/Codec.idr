@@ -167,7 +167,7 @@ allItemKinds : List ItemKind
 allItemKinds =
   map Weapon allWeaponKinds
   ++ map Armor allArmorKinds
-  ++ [Food FoodRation]
+  ++ [Food FoodRation, Food SlimeMold]
   ++ map Potion allPotionKinds
   ++ map Scroll allScrollKinds
   ++ map Wand allWandKinds

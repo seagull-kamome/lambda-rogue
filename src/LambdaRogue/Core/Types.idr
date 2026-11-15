@@ -402,15 +402,18 @@ Eq Monster where
            && a.statuses == b.statuses
 
 public export
-data FoodKind = FoodRation
+data FoodKind = FoodRation | SlimeMold
 
 public export
 Eq FoodKind where
   FoodRation == FoodRation = True
+  SlimeMold == SlimeMold = True
+  _ == _ = False
 
 public export
 Show FoodKind where
   show FoodRation = "food ration"
+  show SlimeMold = "slime mold"
 
 ||| The potion set for the M3 slice.  The exact Rogue 5.4.4 table and the
 ||| per-run colour randomisation are part of the fidelity pass.
@@ -856,7 +859,7 @@ public export
 Eq ItemKind where
   Weapon a == Weapon b = a == b
   Armor a == Armor b = a == b
-  Food FoodRation == Food FoodRation = True
+  Food a == Food b = a == b
   Potion a == Potion b = a == b
   Scroll a == Scroll b = a == b
   Wand a == Wand b = a == b
@@ -869,7 +872,7 @@ public export
 itemName : ItemKind -> String
 itemName (Weapon w) = weaponName w
 itemName (Armor a) = armorName a
-itemName (Food FoodRation) = "food ration"
+itemName (Food f) = show f
 itemName (Potion p) = potionName p
 itemName (Scroll s) = scrollName s
 itemName (Wand w) = wandName w

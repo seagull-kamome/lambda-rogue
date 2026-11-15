@@ -212,6 +212,15 @@ foodTests = do
   check "eating removes the food from the pack"
     (null outFood.game.player.inventory)
 
+  let mold = MkItem 121 (Food SlimeMold) InPack 1 0 False 0 False
+      gMold = setPlayerStats (\p => { hunger := 100 } p)
+                (addToPack [mold] base)
+      outMold = step (Eat 121) gMold
+  check "eating slime mold adds a full ration of nutrition"
+    (outMold.game.player.hunger == 100 + hungerMax - 1)
+  check "eating slime mold reports the fruit"
+    (hasMessage "You eat the slime mold. It tastes wonderful." outMold)
+
   let rHungry = tickSurvival ({ hunger := hungryAt + 1 } base.player)
   check "crossing the hunger threshold warns"
     (any (\m => msgKey m == "hungry") rHungry.messages)

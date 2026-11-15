@@ -1093,14 +1093,17 @@ eat iid st =
     Nothing => say WarningMsg NoSuchItem st
     Just it =>
       case it.kind of
-        Food FoodRation =>
+        Food f =>
           let g0 = removePackItem iid st.game
               p : Player
               p = { hunger := g0.player.hunger + hungerMax } g0.player
               g1 : Game
               g1 = { player := p } g0
+              message = if f == FoodRation
+                           then EatRation
+                           else EatSlimeMold
           in event (ItemUsed iid)
-               (consume (say ItemMsg EatRation
+               (consume (say ItemMsg message
                  ({ game := g1 } st)))
         _ => say WarningMsg CannotEat st
 

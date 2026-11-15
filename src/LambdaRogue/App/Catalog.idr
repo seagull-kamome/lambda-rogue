@@ -301,6 +301,7 @@ messageTemplatesJa =
   , ("quaff-item", "{}を飲んだ。")
   , ("cannot-eat", "それは食べられない。")
   , ("eat-ration", "保存食を食べた。満足した。")
+  , ("eat-slime-mold", "スライムモールドを食べた。とても美味しい。")
   , ("already-wearing-ring", "その指輪はすでにはめている。")
   , ("fingers-full", "指はすでに塞がっている。")
   , ("cannot-put-on", "それは身につけられない。")

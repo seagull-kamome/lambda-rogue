@@ -153,7 +153,7 @@ itemPool : Depth -> List ItemKind
 itemPool d =
   map Weapon allWeapons
   ++ map Armor allArmors
-  ++ [Food FoodRation]
+  ++ [Food FoodRation, Food SlimeMold]
   ++ map Potion allPotions
   ++ map Scroll allScrolls
   ++ map Wand allWands
@@ -209,7 +209,11 @@ randomItemKind g0 =
         else if r < 62
                 then let (k, g2) = pickScroll g1 in (map Scroll k, g2)
                 else if r < 78
-                        then (Just (Food FoodRation), g1)
+                        then let (fruitRoll, g2) = uniform 10 g1
+                                 food = if fruitRoll == 0
+                                           then SlimeMold
+                                           else FoodRation
+                             in (Just (Food food), g2)
                         else if r < 85
                                 then let (k, g2) = pickWeapon g1 in (map Weapon k, g2)
                                 else if r < 92
@@ -223,7 +227,7 @@ public export
 itemGoldValue : ItemKind -> Int32
 itemGoldValue (Weapon w) = weaponValue w
 itemGoldValue (Armor a) = armorGoldValue a
-itemGoldValue (Food FoodRation) = 2
+itemGoldValue (Food _) = 2
 itemGoldValue (Potion p) =
   case p of
     PotionConfusion => 5

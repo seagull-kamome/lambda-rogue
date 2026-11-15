@@ -106,6 +106,7 @@ data Msg
   | QuaffItem String
   | CannotEat
   | EatRation
+  | EatSlimeMold
   | AlreadyWearingRing
   | FingersFull
   | CannotPutOn
@@ -354,6 +355,7 @@ msgEn CannotQuaff = "You cannot quaff that."
 msgEn (QuaffItem name) = "You quaff the " ++ name ++ "."
 msgEn CannotEat = "You cannot eat that."
 msgEn EatRation = "You eat the food ration. You feel satisfied."
+msgEn EatSlimeMold = "You eat the slime mold. It tastes wonderful."
 msgEn AlreadyWearingRing = "You are already wearing that ring."
 msgEn FingersFull = "Your fingers are already full."
 msgEn CannotPutOn = "You cannot put that on."
@@ -526,6 +528,7 @@ msgKey CannotQuaff = "cannot-quaff"
 msgKey (QuaffItem _) = "quaff-item"
 msgKey CannotEat = "cannot-eat"
 msgKey EatRation = "eat-ration"
+msgKey EatSlimeMold = "eat-slime-mold"
 msgKey AlreadyWearingRing = "already-wearing-ring"
 msgKey FingersFull = "fingers-full"
 msgKey CannotPutOn = "cannot-put-on"
@@ -677,6 +680,7 @@ msgArgs CannotQuaff = []
 msgArgs (QuaffItem name) = [name]
 msgArgs CannotEat = []
 msgArgs EatRation = []
+msgArgs EatSlimeMold = []
 msgArgs AlreadyWearingRing = []
 msgArgs FingersFull = []
 msgArgs CannotPutOn = []
@@ -840,6 +844,7 @@ sampleMessages =
   , QuaffItem "potion of healing"
   , CannotEat
   , EatRation
+  , EatSlimeMold
   , AlreadyWearingRing
   , FingersFull
   , CannotPutOn
