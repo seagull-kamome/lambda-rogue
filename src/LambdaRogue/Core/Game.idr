@@ -524,16 +524,22 @@ attackMonster m st =
       g1 : Game
       g1 = { rng := rng' } g
       lvl = currentLevel g1
+      baseStatuses = filter (\s => s.statusKind /= Held) m.statuses
   in case result of
        Miss =>
-         event (PlayerAttacked m.id 0)
-           (consume (say CombatMsg (MissMonster m.kind)
-                       ({ game := revealMimic m.id g1 } st)))
+         let lvl' : Level
+             lvl' = updateMonster m.id
+                      (\mm => { statuses := baseStatuses } mm) lvl
+             g1' : Game
+             g1' = updateCurrentLevel (const lvl') g1
+         in event (PlayerAttacked m.id 0)
+              (consume (say CombatMsg (MissMonster m.kind)
+                          ({ game := revealMimic m.id g1' } st)))
        Hit dmg =>
          let confuse = hasStatus ConfuseNext g1.player
              monsterStatuses = if confuse
-                                 then MkStatus Confused 20 :: m.statuses
-                                 else m.statuses
+                                 then MkStatus Confused 20 :: baseStatuses
+                                 else baseStatuses
              player' : Player
              player' = if confuse
                           then { statuses := filter
@@ -1177,7 +1183,11 @@ applyScroll ScrollMagicMapping st =
 applyScroll ScrollHoldMonster st =
   let g : Game
       g = updateCurrentLevel
-            (\l => { monsters := map (addMonsterStatus Held 10) l.monsters } l)
+            (\l => { monsters := map
+                       (\m => if chebyshev m.pos st.game.player.pos <= 2
+                                 then addMonsterStatus Held 10 m
+                                 else m)
+                       l.monsters } l)
             st.game
   in say ItemMsg MonstersFreeze ({ game := g } st)
 applyScroll ScrollSleep st =

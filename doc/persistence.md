@@ -1,9 +1,9 @@
 # lambda-rogue 永続化・リプレイ設計
 
-- Status: Draft 0.16（M5 スライス 14 の浮遊メッセージを反映。セーブ形式は変更なし）
-- Date: 2026-11-14
+- Status: Draft 0.17（M5 スライス 15 の hold monster 射程を反映。セーブ形式は変更なし）
+- Date: 2026-11-15
 - 対象: `LambdaRogue.Persist.*`, `LambdaRogue.Core.Replay`
-- 前提: `doc/design.md` Draft 1.25, `doc/core-api.md` Draft 1.19
+- 前提: `doc/design.md` Draft 1.26, `doc/core-api.md` Draft 1.20
 
 ## 1. 方針
 

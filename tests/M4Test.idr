@@ -82,6 +82,16 @@ monsterHas k m = any (\s => s.statusKind == k) m.statuses
 monsterById : MonsterId -> Game -> Maybe Monster
 monsterById i g = find (\m => m.id == i) (currentLevel g).monsters
 
+missedAgainst : MonsterId -> Outcome -> Bool
+missedAgainst i out =
+  hasEvent (\e => case e of
+                    PlayerAttacked j d => j == i && d == 0
+                    _ => False) out
+
+lostHold : MonsterId -> Outcome -> Bool
+lostHold i out =
+  maybe False (\m => not (monsterHas Held m)) (monsterById i out.game)
+
 scroll : ItemId -> ScrollKind -> Item
 scroll iid k = MkItem iid (Scroll k) InPack 1 0 False 0 False
 
@@ -277,6 +287,28 @@ scrollTests = do
     (maybe False (\m => monsterHas Held m) holdM)
   check "a held monster does not move"
     (maybe False (\m => m.pos == MkCoord 6 5) holdM)
+
+  let farRat = MkMonster 2 Emu (MkCoord 9 5) 4 4 Chasing []
+      gHoldFar = setMonster farRat
+                   (addToPack [scroll 323 ScrollHoldMonster] base)
+      outHoldFar = step (Read 323) gHoldFar
+  check "hold monster leaves distant monsters free"
+    (maybe False (\m => not (monsterHas Held m))
+                   (monsterById 2 outHoldFar.game))
+
+  let heldDragon = setMonster
+                     (MkMonster 4 Dragon (MkCoord 5 5) 100 100 Chasing
+                        [MkStatus Held 10])
+                     base
+      attempts = map (\s => step (Move E)
+                          ({ rng := fromSeed s } heldDragon))
+                     (the (List Bits64) [1 .. 50])
+      misses = filter (missedAgainst 4) attempts
+      hits = filter (not . missedAgainst 4) attempts
+  check "attacking a held monster ends the hold on a miss"
+    (not (null misses) && all (lostHold 4) misses)
+  check "attacking a held monster ends the hold on a hit"
+    (not (null hits) && all (lostHold 4) hits)
 
   let gSleep = setMonster rat (addToPack [scroll 320 ScrollSleep] base)
       outSleep = step (Read 320) gSleep
