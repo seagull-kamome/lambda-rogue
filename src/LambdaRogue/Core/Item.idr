@@ -222,6 +222,24 @@ randomItemKind g0 =
                                                 then let (k, g2) = pickRing g1 in (map Ring k, g2)
                                                 else let (k, g2) = pickWand g1 in (map Wand k, g2)
 
+||| True for objects that a potion of magic detection reveals: potions,
+||| scrolls, rings and wands are inherently magical; weapons and armor
+||| only when enchanted, cursed, rusty or protected.  Food, gold and
+||| ordinary equipment are not magic.
+public export
+isMagicalItem : Item -> Bool
+isMagicalItem i =
+  case i.kind of
+    Potion _ => True
+    Scroll _ => True
+    Ring _ => True
+    Wand _ => True
+    Weapon _ => i.enchant /= 0 || i.cursed
+    Armor _ => i.enchant /= 0 || i.cursed || i.protected
+    Amulet => True
+    Food _ => False
+    Gold => False
+
 ||| Gold value of one item, from the 5.4.4 item tables.
 public export
 itemGoldValue : ItemKind -> Int32

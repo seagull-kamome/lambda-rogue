@@ -63,6 +63,13 @@ setTraps : List Trap -> Game -> Game
 setTraps ts g =
   updateCurrentLevel (\l => { traps := ts } l) g
 
+setItems : List Item -> Game -> Game
+setItems xs g = { items := xs } g
+
+floorItem : ItemId -> ItemKind -> Coord -> Int32 -> Bool -> Item
+floorItem iid kind c ench cursed =
+  MkItem iid kind (OnFloor 1 c) 1 ench cursed 0 False
+
 addToPack : List Item -> Game -> Game
 addToPack items g =
   let p : Player
@@ -355,6 +362,37 @@ scrollTests = do
     (maybe False (monsterHas Confused) (monsterById 1 outConfHit.game))
   check "the confuse-next status is consumed"
     (not (hasStatus ConfuseNext outConfHit.game.player))
+
+potionDetectionTests : IO ()
+potionDetectionTests = do
+  let detection = potion 609 PotionMagicDetection
+      gItems = setItems
+        (detection ::
+        [ floorItem 600 (Potion PotionHealing) (MkCoord 60 15) 0 False
+        , floorItem 601 (Scroll ScrollTeleportation) (MkCoord 61 15) 0 False
+        , floorItem 602 (Ring RingProtection) (MkCoord 62 15) 0 False
+        , floorItem 603 (Wand WandLight) (MkCoord 63 15) 0 False
+        , floorItem 604 (Weapon Dagger) (MkCoord 64 15) 0 False
+        , floorItem 605 (Weapon Dagger) (MkCoord 65 15) 1 False
+        , floorItem 606 (Armor LeatherArmor) (MkCoord 66 15) (-1) False
+        , floorItem 607 (Food FoodRation) (MkCoord 67 15) 0 False
+        , floorItem 608 Gold (MkCoord 68 15) 0 False
+        , floorItem 610 Amulet (MkCoord 69 15) 0 False
+        ])
+        (addToPack [detection] base)
+      cleared = updateCurrentLevel (\l => { explored := empty } l) gItems
+      outMagic = step (Quaff 609) cleared
+      ex = currentLevel outMagic.game
+      at : Int32 -> Bool
+      at x = getBit x 15 ex.explored
+  check "magic detection reveals potions, scrolls, rings and wands"
+    (at 60 && at 61 && at 62 && at 63)
+  check "magic detection reveals enchanted and rusty equipment"
+    (at 65 && at 66)
+  check "magic detection hides ordinary loot"
+    (not (at 64) && not (at 67) && not (at 68))
+  check "magic detection reveals the amulet"
+    (at 69)
 
 wandTests : IO ()
 wandTests = do
@@ -843,6 +881,7 @@ run : IO ()
 run = do
   appearanceTests
   scrollTests
+  potionDetectionTests
   wandTests
   ringTests
   throwTests

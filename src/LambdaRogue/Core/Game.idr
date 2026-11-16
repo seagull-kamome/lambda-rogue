@@ -1055,8 +1055,7 @@ applyPotion PotionMagicDetection st =
       magicCells = mapMaybe
                      (\i => case i.location of
                               OnFloor d c =>
-                                if d == st.game.depth
-                                   && i.kind /= Gold && i.kind /= Amulet
+                                if d == st.game.depth && isMagicalItem i
                                    then Just c else Nothing
                               _ => Nothing)
                      st.game.items
