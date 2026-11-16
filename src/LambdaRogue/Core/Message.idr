@@ -97,6 +97,7 @@ data Msg
   | Blinded
   | SenseMonsters
   | SenseMagic
+  | StrangeFeeling
   | MovingFaster
   | EyesStrange
   | Float
@@ -346,6 +347,8 @@ msgEn EverythingStrange = "Oh wow! Everything looks strange."
 msgEn Blinded = "You are blinded."
 msgEn SenseMonsters = "You sense the presence of monsters."
 msgEn SenseMagic = "You sense the presence of magic."
+msgEn StrangeFeeling =
+  "You have a strange feeling for a moment, then it passes."
 msgEn MovingFaster = "You feel yourself moving faster."
 msgEn EyesStrange = "Your eyes feel strange."
 msgEn Float = "You float gently into the air."
@@ -519,6 +522,7 @@ msgKey EverythingStrange = "everything-strange"
 msgKey Blinded = "blinded"
 msgKey SenseMonsters = "sense-monsters"
 msgKey SenseMagic = "sense-magic"
+msgKey StrangeFeeling = "strange-feeling"
 msgKey MovingFaster = "moving-faster"
 msgKey EyesStrange = "eyes-strange"
 msgKey Float = "float"
@@ -671,6 +675,7 @@ msgArgs EverythingStrange = []
 msgArgs Blinded = []
 msgArgs SenseMonsters = []
 msgArgs SenseMagic = []
+msgArgs StrangeFeeling = []
 msgArgs MovingFaster = []
 msgArgs EyesStrange = []
 msgArgs Float = []
@@ -835,6 +840,7 @@ sampleMessages =
   , Blinded
   , SenseMonsters
   , SenseMagic
+  , StrangeFeeling
   , MovingFaster
   , EyesStrange
   , Float

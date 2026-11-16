@@ -393,6 +393,41 @@ potionDetectionTests = do
     (not (at 64) && not (at 67) && not (at 68))
   check "magic detection reveals the amulet"
     (at 69)
+  check "magic detection identifies itself when it finds magic"
+    (elem (Potion PotionMagicDetection) outMagic.game.knownKinds)
+
+  let noMagic = setItems [detection] (addToPack [detection] base)
+      outNoMagic = step (Quaff 609)
+                     (updateCurrentLevel (\l => { explored := empty } l)
+                       noMagic)
+  check "empty magic detection gives a strange feeling"
+    (hasMessage
+      "You have a strange feeling for a moment, then it passes."
+      outNoMagic)
+  check "empty magic detection stays unidentified"
+    (not (elem (Potion PotionMagicDetection) outNoMagic.game.knownKinds)
+     && not (hasStatus DetectMagic outNoMagic.game.player))
+
+  let monsterPotion = potion 611 PotionDetectMonsters
+      gNoMonsters = setItems [monsterPotion]
+                      (addToPack [monsterPotion] base)
+      outNoMonsters = step (Quaff 611) gNoMonsters
+  check "empty monster detection gives a strange feeling"
+    (hasMessage
+      "You have a strange feeling for a moment, then it passes."
+      outNoMonsters)
+  check "empty monster detection stays unidentified"
+    (not (elem (Potion PotionDetectMonsters) outNoMonsters.game.knownKinds)
+     && not (hasStatus DetectMonsters outNoMonsters.game.player))
+
+  let rat = MkMonster 1 Emu (MkCoord 6 5) 4 4 Awake []
+      gWithMonster = setMonster rat
+                       (setItems [monsterPotion]
+                         (addToPack [monsterPotion] base))
+      outMonsters = step (Quaff 611) gWithMonster
+  check "monster detection identifies itself when monsters are present"
+    (hasMessage "You sense the presence of monsters." outMonsters
+     && elem (Potion PotionDetectMonsters) outMonsters.game.knownKinds)
 
 wandTests : IO ()
 wandTests = do

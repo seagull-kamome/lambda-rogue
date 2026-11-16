@@ -1044,14 +1044,15 @@ applyPotion PotionBlindness st =
   in say WarningMsg Blinded (setPlayer p' ({ game := g } st))
 applyPotion PotionDetectMonsters st =
   let (turns, rng') = roll 1 8 st.game.rng
-      p' = addStatus DetectMonsters (turns + 4) st.game.player
-      g : Game
-      g = { rng := rng' } st.game
-  in say ItemMsg SenseMonsters
-       (setPlayer p' ({ game := g } st))
+      g0 : Game
+      g0 = { rng := rng' } st.game
+  in if null (currentLevel g0).monsters
+        then say ItemMsg StrangeFeeling ({ game := g0 } st)
+        else let p' = addStatus DetectMonsters (turns + 4) g0.player
+             in say ItemMsg SenseMonsters
+                  (setPlayer p' ({ game := g0 } st))
 applyPotion PotionMagicDetection st =
   let (turns, rng') = roll 1 8 st.game.rng
-      p' = addStatus DetectMagic (turns + 4) st.game.player
       magicCells = mapMaybe
                      (\i => case i.location of
                               OnFloor d c =>
@@ -1059,15 +1060,19 @@ applyPotion PotionMagicDetection st =
                                    then Just c else Nothing
                               _ => Nothing)
                      st.game.items
-      g0 = st.game
-      g1 : Game
-      g1 = updateCurrentLevel
-             (\l => { explored := foldl (\bs, c => setBit c.x c.y bs)
+      g0 : Game
+      g0 = { rng := rng' } st.game
+  in if null magicCells
+        then say ItemMsg StrangeFeeling ({ game := g0 } st)
+        else let p' = addStatus DetectMagic (turns + 4) g0.player
+                 g1 : Game
+                 g1 = updateCurrentLevel
+                        (\l => { explored :=
+                                   foldl (\bs, c => setBit c.x c.y bs)
                                          l.explored magicCells } l) g0
-      g : Game
-      g = { rng := rng', player := p' } g1
-  in say ItemMsg SenseMagic
-       ({ game := g } st)
+                 g : Game
+                 g = { player := p' } g1
+             in say ItemMsg SenseMagic ({ game := g } st)
 applyPotion PotionHasteSelf st =
   let (turns, rng') = roll 1 8 st.game.rng
       p' = addStatus Hasted (turns + 4) st.game.player
@@ -1097,6 +1102,18 @@ applyPotion PotionRaiseLevel st =
       st1 = say ItemMsg MoreExperienced ({ game := g } st)
   in addLevelUpMessages er st1
 
+||| Magic and monster detection only identify themselves when there is
+||| something on the level to reveal.  With nothing there, the potion
+||| produces a strange feeling and its kind remains unknown.
+detectionHasTarget : PotionKind -> Game -> Bool
+detectionHasTarget PotionMagicDetection g =
+  any (\i => case i.location of
+               OnFloor d _ => d == g.depth && isMagicalItem i
+               _ => False) g.items
+detectionHasTarget PotionDetectMonsters g =
+  not (null (currentLevel g).monsters)
+detectionHasTarget _ _ = True
+
 quaff : ItemId -> Step -> Step
 quaff iid st =
   case findPackItem st.game iid of
@@ -1105,7 +1122,10 @@ quaff iid st =
       case it.kind of
         Potion k =>
           let shown = itemDisplayNameIn st.game it
-              g1 = addKnown (Potion k) (removePackItem iid st.game)
+              g0 = removePackItem iid st.game
+              g1 = if detectionHasTarget k st.game
+                      then addKnown (Potion k) g0
+                      else g0
               st1 = say ItemMsg (QuaffItem shown)
                             ({ game := g1 } st)
           in consume (applyPotion k st1)

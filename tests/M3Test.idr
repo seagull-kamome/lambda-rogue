@@ -205,7 +205,9 @@ potionTests = do
      in t >= 807 && t <= 892)
 
   let detect = potion 108 PotionDetectMonsters
-      outDetect = step (Quaff 108) (addToPack [detect] base)
+      watcher = MkMonster 1 Emu (MkCoord 30 10) 4 4 Awake []
+      outDetect = step (Quaff 108)
+                    (setMonster watcher (addToPack [detect] base))
   check "a detect-monsters potion grants the status"
     (hasStatus DetectMonsters outDetect.game.player)
 
