@@ -27,6 +27,11 @@ a pure Core; presentation, input and effects are modernised with
 > from public specifications, data tables and observed behaviour. See
 > [`doc/rogue-reference.md`](doc/rogue-reference.md) for details.
 
+![Gameplay](doc/demo.gif)
+
+A short run on seed `00000000000001fa`: kill the adjacent snake, step over to
+a golden wand, pick it up, then open the inventory and help screens.
+
 ## Requirements
 
 - Idris 2 0.8.x with the rc2 backend (`idris2-rc2`)
