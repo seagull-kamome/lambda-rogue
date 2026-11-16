@@ -2895,3 +2895,26 @@ data Command
   盲目を解除すること、see invisible が盲目を解除して SeeInvisible を
   付与することの 3 チェックを追加した。
 - 全体は 1053 チェックから 1056 チェックへ増えた。
+
+## 46. M5 スライス 18 実装ノート（2026-11-17、魔法の地図とポーション時間）
+
+### 46.1 挙動
+
+- `revealMap` は `explored` を全マスにしたうえで、`Level.traps` の
+  `revealed` をすべて `True` にする。トラップ種別のメッセージは出さない。
+- `spread` は `Game.idr` の内部関数で、`n - n/20` に
+  `uniform (n/10 + 1)` を足した `Int32` を返す。`spread 850` は
+  808–892、`spread 30` は 29–31 になる。
+- `PotionHallucination` / `PotionBlindness` / `PotionSeeInvisible` は
+  `spread 850`、`PotionLevitation` は `spread 30` を使う。
+  `PotionConfusion` / `PotionHasteSelf` / 感知系は従来の短い式のまま。
+- 乱数消費は 1 回で、既存の `roll` と同様に状態・ターン・ダイジェストへ
+  決定的に反映される。
+
+### 46.2 テスト
+
+- `M3Test` に、幻覚・盲目・透明が 807–892、浮遊が 28–31 に収まることの
+  4 チェックを追加した（消費ターン分の 1 を許容）。
+- `M4Test` に、magic mapping が未発見トラップも `revealed` にすることの
+  1 チェックを追加した。
+- 全体は 1056 チェックから 1061 チェックへ増えた。

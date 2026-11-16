@@ -190,10 +190,19 @@ potionTests = do
   check "a confusion potion confuses the player"
     (hasStatus Confused outConfusion.game.player)
 
+  let hallucination = potion 130 PotionHallucination
+      outHallucination = step (Quaff 130) (addToPack [hallucination] base)
+  check "a hallucination potion lasts about 850 turns"
+    (let t = statusTurns Hallucinating outHallucination.game.player
+     in t >= 807 && t <= 892)
+
   let blindness = potion 107 PotionBlindness
       outBlindness = step (Quaff 107) (addToPack [blindness] base)
   check "a blindness potion blinds the player"
     (hasStatus Blinded outBlindness.game.player)
+  check "a blindness potion lasts about 850 turns"
+    (let t = statusTurns Blinded outBlindness.game.player
+     in t >= 807 && t <= 892)
 
   let detect = potion 108 PotionDetectMonsters
       outDetect = step (Quaff 108) (addToPack [detect] base)
@@ -209,6 +218,9 @@ potionTests = do
       outSee = step (Quaff 110) (addToPack [see] base)
   check "a see-invisible potion grants the status"
     (hasStatus SeeInvisible outSee.game.player)
+  check "a see-invisible potion lasts about 850 turns"
+    (let t = statusTurns SeeInvisible outSee.game.player
+     in t >= 807 && t <= 892)
 
   let seeBlind = potion 114 PotionSeeInvisible
       gSeeBlind = setPlayerStats
@@ -229,6 +241,9 @@ potionTests = do
       outLevitation = step (Quaff 112) (addToPack [levitation] base)
   check "a levitation potion lifts the player"
     (hasStatus Levitated outLevitation.game.player)
+  check "a levitation potion lasts about 30 turns"
+    (let t = statusTurns Levitated outLevitation.game.player
+     in t >= 28 && t <= 31)
 
 
 foodTests : IO ()

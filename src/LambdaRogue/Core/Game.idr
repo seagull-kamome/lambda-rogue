@@ -360,7 +360,10 @@ fullMapBits =
 
 revealMap : Game -> Game
 revealMap g =
-  updateCurrentLevel (\l => { explored := fullMapBits } l) g
+  updateCurrentLevel
+    (\l => { explored := fullMapBits
+           , traps := map (\t => { revealed := True } t) l.traps
+           } l) g
 
 roomAt : Level -> Coord -> Maybe Room
 roomAt lvl (MkCoord x y) =
@@ -951,6 +954,15 @@ pickUp st =
                      in event (ItemPicked it.id)
                           (consume (say ItemMsg message ({ game := g' } st)))
 
+||| Rogue's `spread(n)` duration: the nominal value minus 5%, plus a
+||| uniform 0..n/10.  For n=850 this gives 808–892 and for n=30 it
+||| gives 29–31, matching the public reference ranges.
+spread : Int32 -> Rng -> (Int32, Rng)
+spread n g =
+  let base = n - n `div` 20
+      (extra, g') = uniform (cast (n `div` 10 + 1)) g
+  in (base + cast extra, g')
+
 applyPotion : PotionKind -> Step -> Step
 applyPotion PotionHealing st =
   let p = st.game.player
@@ -1018,15 +1030,15 @@ applyPotion PotionConfusion st =
       g = { rng := rng' } st.game
   in say ItemMsg FeelConfused (setPlayer p' ({ game := g } st))
 applyPotion PotionHallucination st =
-  let (turns, rng') = roll 1 50 st.game.rng
-      p' = addStatus Hallucinating (turns + 20) st.game.player
+  let (turns, rng') = spread 850 st.game.rng
+      p' = addStatus Hallucinating turns st.game.player
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg EverythingStrange
        (setPlayer p' ({ game := g } st))
 applyPotion PotionBlindness st =
-  let (turns, rng') = roll 1 8 st.game.rng
-      p' = addStatus Blinded (turns + 4) st.game.player
+  let (turns, rng') = spread 850 st.game.rng
+      p' = addStatus Blinded turns st.game.player
       g : Game
       g = { rng := rng' } st.game
   in say WarningMsg Blinded (setPlayer p' ({ game := g } st))
@@ -1065,14 +1077,14 @@ applyPotion PotionHasteSelf st =
   in say ItemMsg MovingFaster
        (setPlayer p' ({ game := g } st))
 applyPotion PotionSeeInvisible st =
-  let (turns, rng') = roll 1 8 st.game.rng
-      p' = cureBlindness (addStatus SeeInvisible (turns + 4) st.game.player)
+  let (turns, rng') = spread 850 st.game.rng
+      p' = cureBlindness (addStatus SeeInvisible turns st.game.player)
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg EyesStrange (setPlayer p' ({ game := g } st))
 applyPotion PotionLevitation st =
-  let (turns, rng') = roll 1 20 st.game.rng
-      p' = addStatus Levitated (turns + 10) st.game.player
+  let (turns, rng') = spread 30 st.game.rng
+      p' = addStatus Levitated turns st.game.player
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg Float

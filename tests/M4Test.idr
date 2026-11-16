@@ -188,6 +188,16 @@ scrollTests = do
   check "magic mapping reveals the whole level"
     (count (currentLevel outMap.game).explored == 1760)
 
+  -- V5 magic mapping also exposes every trap on the level.
+  let gMapTraps = setTraps
+                    [ MkTrap (MkCoord 3 3) TrapDoor False
+                    , MkTrap (MkCoord 4 3) Bear True
+                    ]
+                    (addToPack [scroll 308 ScrollMagicMapping] base)
+      outMapTraps = step (Read 308) gMapTraps
+  check "magic mapping reveals every trap"
+    (all (\t => t.revealed) (currentLevel outMapTraps.game).traps)
+
   -- Identification scrolls identify the first matching carried item.
   let sword = weapon 301 LongSword 2 False
       gId = addToPack [sword, scroll 302 ScrollIdentifyWeapon] base
