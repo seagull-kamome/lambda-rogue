@@ -475,6 +475,24 @@ public export
 Show PotionKind where
   show = potionName
 
+||| Gold value from the 5.4.4 item table.
+public export
+potionGoldValue : PotionKind -> Int32
+potionGoldValue PotionConfusion = 5
+potionGoldValue PotionHallucination = 5
+potionGoldValue PotionPoison = 5
+potionGoldValue PotionStrength = 150
+potionGoldValue PotionSeeInvisible = 100
+potionGoldValue PotionHealing = 130
+potionGoldValue PotionDetectMonsters = 130
+potionGoldValue PotionMagicDetection = 105
+potionGoldValue PotionRaiseLevel = 250
+potionGoldValue PotionExtraHealing = 200
+potionGoldValue PotionHasteSelf = 190
+potionGoldValue PotionRestoreStrength = 130
+potionGoldValue PotionBlindness = 5
+potionGoldValue PotionLevitation = 75
+
 ||| The scroll set.  Effects are resolved by `Core.Game`; names are
 ||| prefixed to keep them distinct from monster and status constructors.
 public export
@@ -545,6 +563,28 @@ public export
 Show ScrollKind where
   show = scrollName
 
+||| Gold value from the 5.4.4 item table.
+public export
+scrollGoldValue : ScrollKind -> Int32
+scrollGoldValue ScrollConfuseMonster = 140
+scrollGoldValue ScrollMagicMapping = 150
+scrollGoldValue ScrollHoldMonster = 180
+scrollGoldValue ScrollSleep = 5
+scrollGoldValue ScrollEnchantArmor = 160
+scrollGoldValue ScrollIdentifyPotion = 80
+scrollGoldValue ScrollIdentifyScroll = 80
+scrollGoldValue ScrollIdentifyWeapon = 80
+scrollGoldValue ScrollIdentifyArmor = 100
+scrollGoldValue ScrollIdentifyRingOrWand = 115
+scrollGoldValue ScrollScareMonster = 200
+scrollGoldValue ScrollFoodDetection = 60
+scrollGoldValue ScrollTeleportation = 165
+scrollGoldValue ScrollEnchantWeapon = 150
+scrollGoldValue ScrollCreateMonster = 75
+scrollGoldValue ScrollRemoveCurse = 105
+scrollGoldValue ScrollAggravateMonsters = 20
+scrollGoldValue ScrollProtectArmor = 250
+
 ||| The wand set.  `charges` lives on the item, not on the kind.
 public export
 data WandKind
@@ -601,6 +641,25 @@ wandName WandCancellation = "wand of cancellation"
 public export
 Show WandKind where
   show = wandName
+
+||| Gold value from the 5.4.4 item table.  Charges add 20 gold each
+||| when the wand is sold.
+public export
+wandGoldValue : WandKind -> Int32
+wandGoldValue WandLight = 250
+wandGoldValue WandInvisibility = 5
+wandGoldValue WandLightning = 330
+wandGoldValue WandFire = 330
+wandGoldValue WandCold = 330
+wandGoldValue WandPolymorph = 310
+wandGoldValue WandMagicMissile = 170
+wandGoldValue WandHasteMonster = 5
+wandGoldValue WandSlowMonster = 350
+wandGoldValue WandDrainLife = 300
+wandGoldValue WandNothing = 5
+wandGoldValue WandTeleportAway = 340
+wandGoldValue WandTeleportTo = 50
+wandGoldValue WandCancellation = 280
 
 ||| Rogue 5.4.4's 14 rings.  `RingHunger` and `RingIncreaseAccuracy`
 ||| were provisional and do not exist in the authentic table; searching
@@ -660,6 +719,24 @@ ringName RingMaintainArmor = "ring of maintain armor"
 public export
 Show RingKind where
   show = ringName
+
+||| Gold value from the 5.4.4 item table.
+public export
+ringGoldValue : RingKind -> Int32
+ringGoldValue RingProtection = 400
+ringGoldValue RingAddStrength = 400
+ringGoldValue RingSustainStrength = 280
+ringGoldValue RingSearching = 420
+ringGoldValue RingSeeInvisible = 310
+ringGoldValue RingAdornment = 10
+ringGoldValue RingAggravateMonster = 10
+ringGoldValue RingDexterity = 440
+ringGoldValue RingIncreaseDamage = 400
+ringGoldValue RingRegeneration = 460
+ringGoldValue RingSlowDigestion = 240
+ringGoldValue RingTeleportation = 30
+ringGoldValue RingStealth = 470
+ringGoldValue RingMaintainArmor = 380
 
 ||| The authentic 5.4.4 weapon table.  Damage is stored as two dice
 ||| expressions: equipped melee damage and damage when thrown.  The

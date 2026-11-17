@@ -6,6 +6,7 @@ import Data.Maybe
 import LambdaRogue.App.Model
 import LambdaRogue.Core.Dungeon
 import LambdaRogue.Core.Game
+import LambdaRogue.Core.Item
 import LambdaRogue.Core.Replay
 import LambdaRogue.Core.Rng
 import LambdaRogue.Core.Types
@@ -81,6 +82,16 @@ run = do
   check "scoreOf keeps the death result"
     (case scoreOf gDead of
        Just s => s.result == Dead Starved
+       Nothing => False)
+  let plate = MkItem 700 (Armor PlateMail) InPack 1 2 False 0 False
+      pRich : Player
+      pRich = { gold := 10, inventory := [700] } g0.player
+      gRich : Game
+      gRich = { over := Just Won, player := pRich
+              , items := plate :: g0.items } g0
+  check "a winning score includes the pack's sale value"
+    (case scoreOf gRich of
+       Just s => s.gold == 10 + 970
        Nothing => False)
 
   putStrLn "replay tests passed"

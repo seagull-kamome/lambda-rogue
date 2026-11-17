@@ -8,6 +8,7 @@ import LambdaRogue.Core.Bitset
 import LambdaRogue.Core.Dungeon
 import LambdaRogue.Core.Game
 import LambdaRogue.Core.Geometry
+import LambdaRogue.Core.Item
 import LambdaRogue.Core.Monster
 import LambdaRogue.Core.Rng
 import LambdaRogue.Core.Types
@@ -60,6 +61,9 @@ setMonster m g =
 
 setItems : List Item -> Game -> Game
 setItems xs g = { items := xs } g
+
+setGold : Int32 -> Game -> Game
+setGold n = setPlayerStats (\p => { gold := n } p)
 
 monsterOf : Game -> Maybe Monster
 monsterOf g = head' (currentLevel g).monsters
@@ -434,6 +438,44 @@ regenTests = do
     (stateHex afterFive.rng == stateHex healthyHigh.rng
      && afterFive.player.hp == 50)
 
+scoreTests : IO ()
+scoreTests = do
+  check "a death score is only the purse"
+    (finalScore (setGold 123 base) == 123)
+  let win : List Item -> Game
+      win its = { over := Just Won } (setGold 10 (addToPack its base))
+      dagger = MkItem 900 (Weapon Dagger) InPack 1 2 False 0 False
+      cursedDagger = MkItem 901 (Weapon Dagger) InPack 1 (-2) True 0 False
+      plate = MkItem 902 (Armor PlateMail) InPack 1 2 False 0 False
+      arrows = MkItem 903 (Weapon Arrow) InPack 20 0 False 0 False
+      food = MkItem 904 (Food FoodRation) InPack 2 0 False 0 False
+      amulet = MkItem 905 Amulet InPack 1 0 False 0 False
+      heal1 = potion 906 PotionHealing
+      heal2 = potion 907 PotionHealing
+      ring1 = MkItem 908 (Ring RingProtection) InPack 1 2 False 0 False
+      ring2 = MkItem 909 (Ring RingProtection) InPack 1 2 False 0 False
+      fire1 = wand 910 WandFire 5
+      fire2 = wand 911 WandFire 5
+  check "winning adds food and the Amulet to the purse"
+    (finalScore (win [food, amulet]) == 10 + 4 + 1000)
+  check "a weapon is valued from its enchantment"
+    (finalScore (win [dagger]) == 10 + 3 * (3 * 4 + 1))
+  check "a stack of arrows is valued by its count"
+    (finalScore (win [arrows]) == 10 + 20)
+  check "a cursed weapon is worth no less than zero"
+    (finalScore (win [cursedDagger]) == 10)
+  check "enchanted armor follows the sale formula"
+    (finalScore (win [plate]) == 10 + 970)
+  check "the first unknown potion is sold at half price"
+    (finalScore (win [heal1, heal2]) == 10 + 65 + 130)
+  check "a known potion is sold at full price"
+    (finalScore ({ knownKinds := [Potion PotionHealing] } (win [heal1, heal2]))
+       == 10 + 130 + 130)
+  check "ring bonuses and identification affect the sale price"
+    (finalScore (win [ring1, ring2]) == 10 + 300 + 600)
+  check "wand charges add to the sale price once identified"
+    (finalScore (win [fire1, fire2]) == 10 + 215 + 430)
+
 public export
 run : IO ()
 run = do
@@ -446,4 +488,5 @@ run = do
   curseTests
   levitationTests
   regenTests
+  scoreTests
   putStrLn "m5 tests passed"

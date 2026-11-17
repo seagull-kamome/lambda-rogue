@@ -297,7 +297,7 @@ scoreOf g =
     Nothing => Nothing
     Just result =>
       Just (MkScore g.seed g.depth g.player.level g.player.exp
-                    g.player.gold g.turn result)
+                    (finalScore g) g.turn result)
 
 public export
 data PlaybackSpeed = SlowPlayback | NormalPlayback | FastPlayback

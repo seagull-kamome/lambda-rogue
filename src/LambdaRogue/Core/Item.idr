@@ -577,6 +577,83 @@ packItems : Game -> List Item
 packItems g =
   mapMaybe (\iid => find (\i => i.id == iid) g.items) g.player.inventory
 
+||| The four rings whose bonus is shown as a positive or negative
+||| enchantment and valued separately when sold.
+ringHasBonus : RingKind -> Bool
+ringHasBonus RingProtection = True
+ringHasBonus RingAddStrength = True
+ringHasBonus RingDexterity = True
+ringHasBonus RingIncreaseDamage = True
+ringHasBonus _ = False
+
+||| The value of one item before the unknown-kind discount.  This is the
+||| sale table used by Rogue 5.4.4's `total_winner()`.  lambda-rogue has a
+||| single weapon enchantment that acts as both hit and damage bonus, so a
+||| weapon counts it twice in the original `hplus + dplus` term.
+saleWorth : Item -> Int32
+saleWorth i =
+  case i.kind of
+    Weapon w => weaponValue w * (3 * (2 * i.enchant) + i.count)
+    Armor a =>
+      let ac = armorValue a - i.enchant
+      in armorGoldValue a + (9 - ac) * 100
+         + 10 * (armorValue a - ac)
+    Food _ => 2 * i.count
+    Potion k => potionGoldValue k * i.count
+    Scroll k => scrollGoldValue k * i.count
+    Wand k => wandGoldValue k + 20 * i.charges
+    Ring k =>
+      if ringHasBonus k
+         then if i.enchant > 0
+                 then ringGoldValue k + i.enchant * 100
+                 else 10
+         else ringGoldValue k
+    Gold => 0
+    Amulet => 1000
+
+||| The sale value of one item and the knowledge after selling it.  The
+||| first potion, scroll, ring or wand of an unknown kind is worth half;
+||| selling it marks the kind known, exactly as `total_winner()` sets
+||| `oi_know` while walking the pack.
+public export
+itemWorth : List ItemKind -> Item -> (Int32, List ItemKind)
+itemWorth known i =
+  let worth = max 0 (saleWorth i)
+  in case i.kind of
+       Potion _ => discount known worth i.kind
+       Scroll _ => discount known worth i.kind
+       Ring _ => discount known worth i.kind
+       Wand _ => discount known worth i.kind
+       _ => (worth, known)
+  where
+    discount : List ItemKind -> Int32 -> ItemKind -> (Int32, List ItemKind)
+    discount ks w k =
+      if elem k ks
+         then (w, ks)
+         else (w `div` 2, k :: ks)
+
+||| The total sale value of the pack, in inventory order.
+public export
+itemsWorth : List ItemKind -> List Item -> Int32
+itemsWorth known [] = 0
+itemsWorth known (i :: is) =
+  let (w, known') = itemWorth known i
+  in w + itemsWorth known' is
+
+||| The value added to the purse by selling the pack after winning.
+public export
+packWorth : Game -> Int32
+packWorth g = itemsWorth g.knownKinds (packItems g)
+
+||| The number recorded in the top-ten list.  A death scores the purse;
+||| escaping with the Amulet adds the sale value of every carried item.
+public export
+finalScore : Game -> Int32
+finalScore g =
+  case g.over of
+    Just Won => g.player.gold + packWorth g
+    _ => g.player.gold
+
 public export
 findPackItem : Game -> ItemId -> Maybe Item
 findPackItem g iid =
