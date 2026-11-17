@@ -42,7 +42,8 @@ run : IO ()
 run = do
   c80 <- newCanvas (the Len 80) (the Len 22)
   drawMap c80 sampleGame
-  let m80 = MkModel c80 sampleGame 80 24 False Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let m80 : Model
+      m80 = initModel c80 sampleGame
   lines80 <- renderLines 80 24 m80
   check "80x24 has 24 lines" (length lines80 == 24)
   check "80x24 starts with the latest message"
@@ -66,7 +67,8 @@ run = do
 
   c120 <- newCanvas (the Len 80) (the Len 22)
   drawMap c120 sampleGame
-  let m120 = MkModel c120 sampleGame 120 40 False Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let m120 : Model
+      m120 = { width := 120, height := 40 } (initModel c120 sampleGame)
   lines120 <- renderLines 120 40 m120
   check "120x40 has 40 lines" (length lines120 == 40)
   check "120x40 header has the seed and turn"
@@ -87,7 +89,8 @@ run = do
   check "the wide header names the active theme"
     (any (\l => contains "Theme Modern Dark" l) darkLines)
 
-  let mSmall = MkModel c80 sampleGame 40 10 False Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mSmall : Model
+      mSmall = { width := 40, height := 10 } (initModel c80 sampleGame)
   small <- renderLines 40 10 mSmall
   check "a small terminal shows the size warning"
     (any (\l => contains "Terminal too small" l) small)
@@ -98,7 +101,8 @@ run = do
       pInv = { inventory := [1] } sampleGame.player
       gInv : Game
       gInv = { player := pInv, items := [invItem] } sampleGame
-      mInv = MkModel c80 gInv 80 24 True Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mInv : Model
+      mInv = { inventoryOpen := True } (initModel c80 gInv)
   invLines <- renderLines 80 24 mInv
   check "inventory mode shows the pack title"
     (any (\l => contains "Inventory  1/23" l) invLines)
@@ -117,7 +121,8 @@ run = do
       pMany = { inventory := ids } sampleGame.player
       gMany : Game
       gMany = { player := pMany, items := manyItems } sampleGame
-      mMany = MkModel c80 gMany 80 24 True Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mMany : Model
+      mMany = { inventoryOpen := True } (initModel c80 gMany)
   manyLines <- renderLines 80 24 mMany
   check "the classic inventory shows all 23 pack slots"
     (any (\l => contains "a   food ration" l) manyLines
@@ -132,7 +137,8 @@ run = do
       gRing = { player := pRing, items := [ringItem, wandItem]
               , knownKinds := [Ring RingProtection, Wand WandLight] }
                 sampleGame
-      mRing = MkModel c80 gRing 80 24 True Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mRing : Model
+      mRing = { inventoryOpen := True } (initModel c80 gRing)
   ringLines <- renderLines 80 24 mRing
   check "inventory marks a worn ring"
     (any (\l => contains "*" l && contains "ring of protection +2" l) ringLines)
@@ -142,29 +148,31 @@ run = do
   let gUnknownWand : Game
       gUnknownWand = { player := { inventory := [21] } sampleGame.player
                      , items := [wandItem] } sampleGame
-      mUnknownWand = MkModel c80 gUnknownWand 80 24 True Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mUnknownWand : Model
+      mUnknownWand = { inventoryOpen := True } (initModel c80 gUnknownWand)
   unknownLines <- renderLines 80 24 mUnknownWand
   check "an unidentified wand shows its appearance"
     (any (\l => contains "oak wand" l) unknownLines)
   check "an unidentified wand hides its charges"
     (not (any (\l => contains "charges" l) unknownLines))
 
-  let mWideRing = MkModel c120 gRing 120 40 False Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mWideRing : Model
+      mWideRing = { width := 120, height := 40 } (initModel c120 gRing)
   wideRingLines <- renderLines 120 40 mWideRing
   check "the wide sidebar shows both ring slots"
     (any (\l => contains "Rings: ring of protection +2 / none" l)
          wideRingLines)
 
-  let mPrompt = MkModel c80 sampleGame 80 24 False Nothing Nothing
-                  (Just (ZapDir 1)) False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mPrompt : Model
+      mPrompt = { pendingDir := Just (ZapDir 1) } (initModel c80 sampleGame)
   promptLines <- renderLines 80 24 mPrompt
   check "the direction prompt replaces the latest message"
     (case promptLines of
        (l :: _) => contains "Zap in which direction?" l
        [] => False)
 
-  let mHelp = MkModel c80 sampleGame 80 24 False Nothing Nothing Nothing
-                True False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mHelp : Model
+      mHelp = { helpOpen := True } (initModel c80 sampleGame)
   helpScreen <- renderLines 80 24 mHelp
   check "help shows its title"
     (any (\l => contains "lambda-rogue help" l) helpScreen)
@@ -181,8 +189,9 @@ run = do
   check "help shows how to close it"
     (any (\l => contains "closes this help" l) helpScreen)
 
-  let mWideHelp = MkModel c120 sampleGame 120 40 False Nothing Nothing
-                    Nothing True False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mWideHelp : Model
+      mWideHelp = { width := 120, height := 40, helpOpen := True }
+                    (initModel c120 sampleGame)
   wideHelp <- renderLines 120 40 mWideHelp
   check "wide help includes the symbol legend"
     (any (\l => contains "A-Z monsters" l) wideHelp)
@@ -206,8 +215,9 @@ run = do
   check "help no longer shows the old help key"
     (not (any (\l => contains "? / F1 / Ctrl-P" l) reboundHelpLines))
 
-  let mPalette = MkModel c80 sampleGame 80 24 False Nothing Nothing Nothing
-                   False True 2 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mPalette : Model
+      mPalette = { paletteOpen := True, paletteIndex := 2 }
+                   (initModel c80 sampleGame)
   paletteScreen <- renderLines 80 24 mPalette
   check "the palette shows its title"
     (any (\l => contains "Command palette" l) paletteScreen)
@@ -261,9 +271,8 @@ run = do
         ]
       gLog : Game
       gLog = { messages := logMessages } sampleGame
-      mCombatClassic = MkModel c80 gLog 80 24 False Nothing Nothing Nothing
-                         False False 0 CombatMessages
-                         (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mCombatClassic : Model
+      mCombatClassic = { logFilter := CombatMessages } (initModel c80 gLog)
   combatClassic <- renderLines 80 24 mCombatClassic
   check "the classic latest line follows the log filter"
     (case combatClassic of
@@ -274,9 +283,10 @@ run = do
        (l :: _) => contains "[combat]" l
        [] => False)
 
-  let mCombatWide = MkModel c120 gLog 120 40 False Nothing Nothing Nothing
-                      False False 0 CombatMessages
-                      (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mCombatWide : Model
+      mCombatWide = { width := 120, height := 40
+                    , logFilter := CombatMessages }
+                      (initModel c120 gLog)
   combatWide <- renderLines 120 40 mCombatWide
   check "the wide log filter keeps combat messages"
     (any (\l => contains "You hit the kobold." l) combatWide)
@@ -290,8 +300,8 @@ run = do
   check "the wide minimap explains what it shows"
     (any (\l => contains "Only explored cells are shown." l) lines120)
 
-  let mWideInv = MkModel c120 gRing 120 40 True (Just 20) Nothing Nothing
-                   False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mWideInv = { width := 120, height := 40, inventoryOpen := True
+           , selectedItem := Just 20 } (initModel c120 gRing)
   wideInv <- renderLines 120 40 mWideInv
   check "the wide inventory has a detail pane"
     (any (\l => contains "Item details" l) wideInv)
@@ -306,8 +316,8 @@ run = do
   check "the detail pane compares ring slots"
     (any (\l => contains "Rings: ring of protection +2 / none" l) wideInv)
 
-  let mWideWand = MkModel c120 gRing 120 40 True (Just 21) Nothing Nothing
-                    False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mWideWand = { width := 120, height := 40, inventoryOpen := True
+           , selectedItem := Just 21 } (initModel c120 gRing)
   wideWand <- renderLines 120 40 mWideWand
   check "the detail pane shows known wand charges"
     (any (\l => contains "Charges: 5" l) wideWand)
@@ -317,9 +327,10 @@ run = do
                        (Dead (KilledBy Kestrel))
       gWon : Game
       gWon = { over := Just Won } sampleGame
-      mScore = MkModel c80 gWon 80 24 False Nothing Nothing Nothing
-                 False False 0 AllMessages (emptyReplay sampleGame.seed)
-                 [score] True False (Just True) ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mScore : Model
+      mScore = { scores := [score], scoreOpen := True
+               , replayOk := Just True }
+                 (initModel c80 gWon)
   scoreScreen <- renderLines 80 24 mScore
   check "the score screen shows its title"
     (any (\l => contains "Scores" l) scoreScreen)
@@ -389,9 +400,8 @@ run = do
   check "an empty replay browser says there are no files"
     (any (\l => contains "No saved replays." l) emptyBrowserScreen)
 
-  let mShare = MkModel c80 sampleGame 80 24 False Nothing Nothing Nothing
-                 False False 0 AllMessages (emptyReplay sampleGame.seed)
-                 [] False True Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+  let mShare : Model
+      mShare = { shareOpen := True } (initModel c80 sampleGame)
   shareScreen <- renderLines 80 24 mShare
   check "the share screen shows its title"
     (any (\l => contains "Share seed" l) shareScreen)

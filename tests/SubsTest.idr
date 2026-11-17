@@ -195,7 +195,7 @@ run = do
       g : Game
       g = { player := p, items := [potion] } sampleGame
       m : Model
-      m = MkModel c g 80 24 True Nothing Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      m = { inventoryOpen := True } (initModel c g)
 
   check "a selects the first pack item"
     (isSelect 2 (key m (Press (KChar 'a') noMods)))
@@ -254,7 +254,8 @@ run = do
       gWand = { player := { inventory := [3] } sampleGame.player
               , items := [wandItem] } sampleGame
       mWand : Model
-      mWand = MkModel c gWand 80 24 True (Just 3) Nothing Nothing False False 0 AllMessages (emptyReplay sampleGame.seed) [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mWand = { inventoryOpen := True, selectedItem := Just 3 }
+                 (initModel c gWand)
   check "Enter zaps a selected wand"
     (isAction ZapAction (key mWand (Press KEnter noMods)))
 
@@ -480,9 +481,7 @@ run = do
       pDying = { hp := 1, hunger := starvingDeathAt + 1 } gStarve.player
       gDying : Game
       gDying = { player := pDying } gStarve
-      mDying = MkModel c gDying 80 24 False Nothing Nothing Nothing
-                 False False 0 AllMessages (emptyReplay 42)
-                 [] False False Nothing ClassicCga Nothing [] True Nothing defaultKeymap English defaultUiState
+      mDying = initModel c gDying
       deadOut = update (Do Wait) mDying
       mDead = fst deadOut
   check "game over auto-opens the score screen"
