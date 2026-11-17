@@ -271,8 +271,10 @@ cellForWith theme hovered g c t =
                                   Nothing =>
                                     case itemAt g c of
                                       Just i =>
-                                        if hasStatus DetectFood g.player
-                                           && isFood i.kind
+                                        if (hasStatus DetectMagic g.player
+                                            && isMagicalItem i)
+                                           || (hasStatus DetectFood g.player
+                                               && isFood i.kind)
                                            then Just (MkCell (itemGlyph i.kind)
                                                              (detectedItemStyleIn theme))
                                            else Just (dimCellIn theme t)

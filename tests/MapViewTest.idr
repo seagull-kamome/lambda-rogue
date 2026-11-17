@@ -157,6 +157,36 @@ run = do
        Just c => c.glyph == '%' && c.style == detectedItemStyle
        Nothing => False)
 
+  let magicPotion = newItem 20 (Potion PotionHealing)
+                            (OnFloor 1 (MkCoord 7 5))
+      gMagicItem : Game
+      gMagicItem = { items := [magicPotion] } gRoom
+      pMagic : Player
+      pMagic = { statuses := [MkStatus DetectMagic 5] } gMagicItem.player
+      gMagic : Game
+      gMagic = { player := pMagic } gMagicItem
+  check "remembered magic items are hidden without magic detection"
+    (case cellFor gMagicItem (MkCoord 7 5) Floor of
+       Just c => c.glyph == '.'
+       Nothing => False)
+  check "detect magic reveals remembered magic items"
+    (case cellFor gMagic (MkCoord 7 5) Floor of
+       Just c => c.glyph == '!' && c.style == detectedItemStyle
+       Nothing => False)
+
+  let ordinary = newItem 21 (Weapon Dagger) (OnFloor 1 (MkCoord 7 5))
+      gOrdinaryItem : Game
+      gOrdinaryItem = { items := [ordinary] } gRoom
+      pOrdinary : Player
+      pOrdinary = { statuses := [MkStatus DetectMagic 5] }
+                    gOrdinaryItem.player
+      gOrdinary : Game
+      gOrdinary = { player := pOrdinary } gOrdinaryItem
+  check "detect magic does not reveal ordinary items"
+    (case cellFor gOrdinary (MkCoord 7 5) Floor of
+       Just c => c.glyph == '.'
+       Nothing => False)
+
   let stalker = MkMonster 5 Phantom monsterPos 10 10 Chasing []
       lvlStalker : Level
       lvlStalker = { monsters := [stalker] } (currentLevel gRoom)
