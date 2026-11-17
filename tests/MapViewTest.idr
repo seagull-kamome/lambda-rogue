@@ -144,6 +144,35 @@ run = do
        Just c => c.glyph == 'K' && c.style == detectedMonsterStyle
        Nothing => False)
 
+  let unexploredPos = MkCoord 78 20
+      deepMonster = MkMonster 7 Kestrel unexploredPos 4 4 Awake []
+      lvlDeep : Level
+      lvlDeep = { monsters := [deepMonster] } (currentLevel gRoom)
+      gDeep : Game
+      gDeep = updateCurrentLevel (const lvlDeep) gRoom
+      pDeep : Player
+      pDeep = { statuses := [MkStatus DetectMonsters 5] } gDeep.player
+      gDeepDetect : Game
+      gDeepDetect = { player := pDeep } gDeep
+  check "an unexplored monster is hidden without detection"
+    (isNothing (cellFor gDeep unexploredPos Floor))
+  check "detect monsters reveals monsters in unexplored cells"
+    (case cellFor gDeepDetect unexploredPos Floor of
+       Just c => c.glyph == 'K' && c.style == detectedMonsterStyle
+       Nothing => False)
+
+  let deepPhantom = MkMonster 8 Phantom unexploredPos 10 10 Chasing []
+      lvlPhantom : Level
+      lvlPhantom = { monsters := [deepPhantom] } (currentLevel gRoom)
+      gPhantom : Game
+      gPhantom = updateCurrentLevel (const lvlPhantom) gRoom
+      pPhantom : Player
+      pPhantom = { statuses := [MkStatus DetectMonsters 5] } gPhantom.player
+      gPhantomDetect : Game
+      gPhantomDetect = { player := pPhantom } gPhantom
+  check "detect monsters keeps an invisible monster hidden"
+    (isNothing (cellFor gPhantomDetect unexploredPos Floor))
+
   check "remembered food is hidden without detection"
     (case cellFor gRoom (MkCoord 7 5) Floor of
        Just c => c.glyph == '.'

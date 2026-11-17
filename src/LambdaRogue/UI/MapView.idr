@@ -136,6 +136,16 @@ dimCellIn t tile = MkCell (tileGlyph tile) (styleFor t DimCellRole)
 dimCell : Tile -> Cell
 dimCell = dimCellIn ClassicCga
 
+||| How a monster appears on the map.  A mimicking monster keeps its
+||| disguise; otherwise the glyph uses the normal or the detected style.
+monsterCellIn : Theme -> Bool -> Monster -> Cell
+monsterCellIn theme detected m =
+  if isMimicking m
+     then MkCell (itemGlyph (mimicKindFor m.id)) (itemStyleIn theme)
+     else MkCell (monsterGlyph m.kind)
+                 (if detected then detectedMonsterStyleIn theme
+                              else monsterStyleIn theme)
+
 monsterAt : Level -> Coord -> Maybe Monster
 monsterAt lvl c = find (\m => m.pos == c) lvl.monsters
 
@@ -228,8 +238,10 @@ highlightCell c (Just hovered) cell =
   if c == hovered then { style := withAttr Inverse cell.style } cell else cell
 
 ||| The cell to draw at `(x, y)`, or `Nothing` when the cell is still
-||| unknown.  Monsters, items and revealed traps are only shown while they
-||| are visible; remembered terrain is dimmed.
+||| unknown.  Monsters, items and revealed traps are shown while they are
+||| visible; remembered terrain is dimmed.  Detection potions can add
+||| monsters (on explored and unexplored cells) and items (on explored
+||| cells) while their status lasts.
 public export
 cellForWith : Theme -> Maybe Coord -> Game -> Coord -> Tile -> Maybe Cell
 cellForWith theme hovered g c t =
@@ -242,12 +254,7 @@ cellForWith theme hovered g c t =
                           Just m =>
                             if monsterHidden g m
                                then Just (cellOfIn theme t)
-                               else if isMimicking m
-                                       then Just (MkCell
-                                                    (itemGlyph (mimicKindFor m.id))
-                                                    (itemStyleIn theme))
-                                       else Just (MkCell (monsterGlyph m.kind)
-                                                         (monsterStyleIn theme))
+                               else Just (monsterCellIn theme False m)
                           Nothing =>
                             case itemAt g c of
                               Just i => Just (MkCell (itemGlyph i.kind)
@@ -265,8 +272,7 @@ cellForWith theme hovered g c t =
                                   Just m =>
                                     if hasStatus DetectMonsters g.player
                                        && not (monsterHidden g m)
-                                       then Just (MkCell (monsterGlyph m.kind)
-                                                         (detectedMonsterStyleIn theme))
+                                       then Just (monsterCellIn theme True m)
                                        else Just (dimCellIn theme t)
                                   Nothing =>
                                     case itemAt g c of
@@ -279,7 +285,13 @@ cellForWith theme hovered g c t =
                                                              (detectedItemStyleIn theme))
                                            else Just (dimCellIn theme t)
                                       Nothing => Just (dimCellIn theme t)
-                           else Nothing
+                           else case monsterAt lvl c of
+                                  Just m =>
+                                    if hasStatus DetectMonsters g.player
+                                       && not (monsterHidden g m)
+                                       then Just (monsterCellIn theme True m)
+                                       else Nothing
+                                  Nothing => Nothing
   in map (highlightCell c hovered) base
 
 public export

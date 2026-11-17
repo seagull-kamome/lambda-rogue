@@ -376,6 +376,10 @@ HP は `レベル d8`（**導出**）。攻撃は `個数 d 面` の並び。
   普通の武器防具は地図に現れない。
 - 感知した魔法物品は、視界外でも探索済みのマスに物品記号で表示される。
   表示は `DetectMagic` 状態の間だけ続く。
+- `monster detection` は同階の全モンスターを、探索済みか未探索かを問わず
+  地図に表示する。透明モンスターは、隣接しているか see invisible の
+  効果・指輪がある場合だけ表示する。表示は `DetectMonsters` 状態の間
+  だけ続く。
 - `magic detection` と `monster detection` は、同階に表示する対象が
   1 つもないとき「You have a strange feeling for a moment, then it
   passes.」と表示する。この場合ポーションの種別は未識別のままで、
