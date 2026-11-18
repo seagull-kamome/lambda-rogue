@@ -69,6 +69,13 @@ withoutMonsters g =
       lvl = { monsters := [] } lvl0
   in updateCurrentLevel (const lvl) g
 
+||| Seeds whose arrow-trap swing hits or misses a level-1, AC-10 player.
+arrowHitSeed : Bits64
+arrowHitSeed = 0
+
+arrowMissSeed : Bits64
+arrowMissSeed = 1
+
 setMonster : Monster -> Game -> Game
 setMonster m g =
   let lvl0 = currentLevel g
@@ -325,8 +332,9 @@ run = do
      && outDeep.game.depth == 26
      && hasMessage "You cannot descend further." outDeep)
 
-  let gTrap = setTraps [MkTrap (MkCoord 5 5) ArrowTrap False]
-                (setPlayer (MkCoord 4 5) (withoutMonsters g0))
+  let gTrap = { rng := fromSeed arrowHitSeed }
+                 (setTraps [MkTrap (MkCoord 5 5) ArrowTrap False]
+                   (setPlayer (MkCoord 4 5) (withoutMonsters g0)))
       outTrap = step (Move E) gTrap
   check "an arrow trap damages the player"
     (outTrap.game.player.hp < gTrap.player.hp)
@@ -337,6 +345,21 @@ run = do
   check "a trap is reported"
     (hasTrapTriggered outTrap
      && hasMessageContaining "You trigger a arrow trap." outTrap)
+
+  let gMiss : Game
+      gMiss = { rng := fromSeed arrowMissSeed }
+                (setTraps [MkTrap (MkCoord 5 5) ArrowTrap False]
+                  (setPlayer (MkCoord 4 5) (withoutMonsters g0)))
+      outMiss : Outcome
+      outMiss = step (Move E) gMiss
+  check "an arrow that misses does no damage"
+    (outMiss.game.player.hp == gMiss.player.hp
+     && hasMessage "an arrow shoots past you" outMiss)
+  check "an arrow that misses drops an arrow"
+    (length outMiss.game.items == length gMiss.items + 1
+     && elem (Weapon Arrow) (map (.kind) outMiss.game.items))
+  check "a dropped arrow uses a fresh item id"
+    (outMiss.game.nextItemId /= gMiss.nextItemId)
 
   let gTrapDoor = setTraps [MkTrap (MkCoord 5 5) TrapDoor False]
                     (setPlayer (MkCoord 4 5) (withoutMonsters g0))
@@ -356,9 +379,10 @@ run = do
        Just t => walkable t
        Nothing => False)
 
-  let gTrapDeath = setPlayerStats (\p => { hp := 1 } p)
-                     (setTraps [MkTrap (MkCoord 5 5) ArrowTrap False]
-                       (setPlayer (MkCoord 4 5) (withoutMonsters g0)))
+  let gTrapDeath = { rng := fromSeed arrowHitSeed }
+                     (setPlayerStats (\p => { hp := 1 } p)
+                       (setTraps [MkTrap (MkCoord 5 5) ArrowTrap False]
+                         (setPlayer (MkCoord 4 5) (withoutMonsters g0))))
       outTrapDeath = step (Move E) gTrapDeath
   check "a trap can kill the player"
     (outTrapDeath.game.over == Just (Dead (KilledByTrap ArrowTrap)))

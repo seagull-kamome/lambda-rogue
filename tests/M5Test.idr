@@ -374,7 +374,7 @@ curseTests = do
 
 levitationTests : IO ()
 levitationTests = do
-  let trapped = { rng := fromSeed 1 }
+  let trapped = { rng := fromSeed 0 }
                   (setTraps [MkTrap (MkCoord 5 5) ArrowTrap False] base)
       floating = withStatus Levitated 10 trapped
       out = step (Move E) floating

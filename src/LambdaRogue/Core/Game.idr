@@ -605,17 +605,15 @@ openDoor c st =
   in event (DoorOpened c)
        (consume (say SystemMsg message ({ game := g' } st)))
 
-trapDamage : TrapKind -> Int32 -> Int32 -> Step -> Step
-trapDamage kind n sides st =
+trapDamageWith : TrapKind -> Int32 -> Step -> Step
+trapDamageWith kind dmg st =
   let g = st.game
-      (dmg, rng') = roll n sides g.rng
       hp' = max 0 (g.player.hp - dmg)
       player' : Player
       player' = { hp := hp' } g.player
       g1 : Game
-      g1 = { rng := rng', player := player' } g
-      hit = say WarningMsg (TakeDamage dmg)
-              ({ game := g1 } st)
+      g1 = { player := player' } g
+      hit = say WarningMsg (TakeDamage dmg) ({ game := g1 } st)
   in if hp' <= 0
        then let g2 : Game
                 g2 = { over := Just (Dead (KilledByTrap kind)) } g1
@@ -623,6 +621,75 @@ trapDamage kind n sides st =
                  (say WarningMsg (Die True (KilledByTrap kind))
                    ({ game := g2 } st))
        else hit
+
+trapDamage : TrapKind -> Int32 -> Int32 -> Step -> Step
+trapDamage kind n sides st =
+  let (dmg, rng') = roll n sides st.game.rng
+      g : Game
+      g = { rng := rng' } st.game
+  in trapDamageWith kind dmg ({ game := g } st)
+
+||| An arrow trap uses `swing(level - 1, armor, 1)`.  A miss drops one
+||| arrow on the floor; a hit deals 1d6 damage.
+arrowTrap : Step -> Step
+arrowTrap st =
+  let g = st.game
+      p = g.player
+      (hit, rng1) = swing (p.level - 1) (playerArmorClass p) 1 g.rng
+      g1 : Game
+      g1 = { rng := rng1 } g
+  in if not hit
+       then let arrow = newItem g1.nextItemId (Weapon Arrow)
+                               (OnFloor g1.depth p.pos)
+                g2 : Game
+                g2 = { items := g1.items ++ [arrow]
+                     , nextItemId := g1.nextItemId + 1 } g1
+            in say WarningMsg ArrowShootsPast ({ game := g2 } st)
+       else let (dmg, rng2) = roll 1 6 g1.rng
+                g2 : Game
+                g2 = { rng := rng2 } g1
+            in trapDamageWith ArrowTrap dmg
+                 (say WarningMsg ArrowShot ({ game := g2 } st))
+
+||| A dart trap uses `swing(level + 1, armor, 1)`.  A miss leaves
+||| nothing behind; a hit deals 1d4 damage and poisons the player unless
+||| a sustain-strength ring or a successful save prevents it.
+dartTrap : Step -> Step
+dartTrap st =
+  let g = st.game
+      p = g.player
+      (hit, rng1) = swing (p.level + 1) (playerArmorClass p) 1 g.rng
+      g1 : Game
+      g1 = { rng := rng1 } g
+  in if not hit
+       then say WarningMsg DartWhizzesBy ({ game := g1 } st)
+       else let (dmg, rng2) = roll 1 4 g1.rng
+                g2 : Game
+                g2 = { rng := rng2 } g1
+                st1 : Step
+                st1 = trapDamageWith DartTrap dmg
+                        (say WarningMsg DartHits ({ game := g2 } st))
+            in if isJust st1.game.over
+                  then st1
+                  else if hasRing RingSustainStrength st1.game
+                          then say WarningMsg StrengthHolds st1
+                          else let (saved, rng3) = roll 1 20 st1.game.rng
+                                   need = 14
+                                          - st1.game.player.level `div` 2
+                                   g3 : Game
+                                   g3 = { rng := rng3 } st1.game
+                               in if saved >= need
+                                    then ({ game := g3 } st1)
+                                    else let p' : Player
+                                             p' = { strength :=
+                                                      max 0
+                                                        (st1.game.player.strength
+                                                           - 1) }
+                                                    st1.game.player
+                                             g4 : Game
+                                             g4 = { player := p' } g3
+                                         in say WarningMsg FeelWeaker
+                                              ({ game := g4 } st1)
 
 teleportPlayer : Step -> Step
 teleportPlayer st =
@@ -725,18 +792,8 @@ applyTrap trap st =
       if st.game.depth < 26
          then descendLevel st
          else trapDamage TrapDoor 1 6 st
-    ArrowTrap => trapDamage ArrowTrap 1 6 st
-    DartTrap =>
-      let st1 = trapDamage DartTrap 1 4 st
-      in if isJust st1.game.over
-            then st1
-            else if hasRing RingSustainStrength st1.game
-                    then say WarningMsg StrengthHolds st1
-                    else let p = st1.game.player
-                             p' : Player
-                             p' = { strength := max 0 (p.strength - 1) } p
-                         in say WarningMsg FeelWeaker
-                              (setPlayer p' st1)
+    ArrowTrap => arrowTrap st
+    DartTrap => dartTrap st
     Bear =>
       say WarningMsg BearTrap
         (setPlayer (addStatus Held 4 st.game.player) st)

@@ -52,6 +52,20 @@ withoutMonsters g =
       lvl = { monsters := [] } lvl0
   in updateCurrentLevel (const lvl) g
 
+||| Seeds for the dart-trap outcomes at player level 1, AC 10:
+||| hit, miss, hit with a failed poison save, hit with a successful one.
+dartHitSeed : Bits64
+dartHitSeed = 0
+
+dartMissSeed : Bits64
+dartMissSeed = 1
+
+dartPoisonsSeed : Bits64
+dartPoisonsSeed = 0
+
+dartSavedSeed : Bits64
+dartSavedSeed = 8
+
 setMonster : Monster -> Game -> Game
 setMonster m g =
   let lvl0 = currentLevel g
@@ -892,11 +906,38 @@ trapEffectTests = do
     (hasStatus Held outBear.game.player
      && outBear.game.player.hp == base.player.hp)
 
-  let gDart = setTraps [MkTrap (MkCoord 5 5) DartTrap False] base
+  let gDart = { rng := fromSeed dartHitSeed }
+                 (setTraps [MkTrap (MkCoord 5 5) DartTrap False] base)
       outDart = step (Move E) gDart
   check "a dart trap damages the player"
     (outDart.game.player.hp < base.player.hp
      && hasMessageContaining "You trigger a dart trap." outDart)
+  check "a dart hit reports the shoulder wound"
+    (hasMessage "a small dart just hit you in the shoulder" outDart)
+
+  let gDartMiss = { rng := fromSeed dartMissSeed }
+                    (setTraps [MkTrap (MkCoord 5 5) DartTrap False] base)
+      outDartMiss = step (Move E) gDartMiss
+  check "a dart that misses does no damage"
+    (outDartMiss.game.player.hp == base.player.hp
+     && outDartMiss.game.player.strength == base.player.strength
+     && hasMessage "a small dart whizzes by your ear and vanishes"
+          outDartMiss)
+
+  let gDartPoison = { rng := fromSeed dartPoisonsSeed }
+                      (setTraps [MkTrap (MkCoord 5 5) DartTrap False] base)
+      outDartPoison = step (Move E) gDartPoison
+  check "a failed poison save costs one strength"
+    (outDartPoison.game.player.strength
+       == max 0 (base.player.strength - 1)
+     && hasMessage "You feel weaker." outDartPoison)
+
+  let gDartSaved = { rng := fromSeed dartSavedSeed }
+                     (setTraps [MkTrap (MkCoord 5 5) DartTrap False] base)
+      outDartSaved = step (Move E) gDartSaved
+  check "a successful poison save keeps strength"
+    (outDartSaved.game.player.strength == base.player.strength
+     && outDartSaved.game.player.hp < base.player.hp)
 
   let leather = armor 703 LeatherArmor 2 False
       gWorn = step (Wear 703) (addToPack [leather] base)

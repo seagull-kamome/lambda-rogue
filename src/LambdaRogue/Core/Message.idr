@@ -57,6 +57,10 @@ data Msg
   | FoundSecretDoor
   | OpenDoor
   | TriggerTrap TrapKind
+  | ArrowShot
+  | ArrowShootsPast
+  | DartHits
+  | DartWhizzesBy
   | TeleportFizzles
   | Teleported Coord
   | CannotDescend
@@ -309,6 +313,10 @@ msgEn (KillMonsterPlain kind) = "You kill the " ++ monsterName kind ++ "."
 msgEn FoundSecretDoor = "You found a secret door."
 msgEn OpenDoor = "You open the door."
 msgEn (TriggerTrap kind) = "You trigger a " ++ show kind ++ "."
+msgEn ArrowShot = "oh no! An arrow shot you"
+msgEn ArrowShootsPast = "an arrow shoots past you"
+msgEn DartHits = "a small dart just hit you in the shoulder"
+msgEn DartWhizzesBy = "a small dart whizzes by your ear and vanishes"
 msgEn TeleportFizzles = "The teleport trap fizzles."
 msgEn (Teleported c) = "You are teleported to " ++ show c ++ "."
 msgEn CannotDescend = "You cannot descend further."
@@ -488,6 +496,10 @@ msgKey (KillMonsterPlain _) = "kill-monster-plain"
 msgKey FoundSecretDoor = "found-secret-door"
 msgKey OpenDoor = "open-door"
 msgKey (TriggerTrap _) = "trigger-trap"
+msgKey ArrowShot = "arrow-shot"
+msgKey ArrowShootsPast = "arrow-shoots-past"
+msgKey DartHits = "dart-hits"
+msgKey DartWhizzesBy = "dart-whizzes-by"
 msgKey TeleportFizzles = "teleport-fizzles"
 msgKey (Teleported _) = "teleported"
 msgKey CannotDescend = "cannot-descend"
@@ -644,6 +656,10 @@ msgArgs (KillMonsterPlain kind) = [monsterName kind]
 msgArgs FoundSecretDoor = []
 msgArgs OpenDoor = []
 msgArgs (TriggerTrap kind) = [show kind]
+msgArgs ArrowShot = []
+msgArgs ArrowShootsPast = []
+msgArgs DartHits = []
+msgArgs DartWhizzesBy = []
 msgArgs TeleportFizzles = []
 msgArgs (Teleported c) = [show c.x, show c.y]
 msgArgs CannotDescend = []
@@ -812,6 +828,10 @@ sampleMessages =
   , FoundSecretDoor
   , OpenDoor
   , TriggerTrap Bear
+  , ArrowShot
+  , ArrowShootsPast
+  , DartHits
+  , DartWhizzesBy
   , TeleportFizzles
   , Teleported (MkCoord 3 4)
   , CannotDescend
