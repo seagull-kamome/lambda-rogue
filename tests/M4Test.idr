@@ -946,11 +946,18 @@ trapEffectTests = do
   check "a rust trap weakens unprotected armor"
     (maybe False (\i => i.enchant == 1) (findPackItem outRustTrap.game 703))
 
-  let gMysterious = setTraps [MkTrap (MkCoord 5 5) Mysterious False] base
+  let gMysterious = { rng := fromSeed 0 }
+                      (setTraps [MkTrap (MkCoord 5 5) Mysterious False] base)
       outMysterious = step (Move E) gMysterious
-  check "a mysterious trap only makes a noise"
-    (hasMessageContaining "strange noise" outMysterious
+  check "a mysterious trap picks a deterministic effect"
+    (hasMessage "You suddenly feel very thirsty." outMysterious
      && outMysterious.game.player.pos == MkCoord 5 5)
+
+  let gColorTrap = { rng := fromSeed 1 }
+                     (setTraps [MkTrap (MkCoord 5 5) Mysterious False] base)
+      outColorTrap = step (Move E) gColorTrap
+  check "a mysterious trap can produce a coloured message"
+    (hasMessage "The light in here suddenly seems violet." outColorTrap)
 
 public export
 run : IO ()

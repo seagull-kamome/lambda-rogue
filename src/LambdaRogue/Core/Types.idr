@@ -1353,3 +1353,25 @@ playerSeesInvisible g =
 public export
 range : Int32 -> Int32 -> List Int32
 range lo hi = if lo > hi then [] else lo :: range (lo + 1) hi
+
+||| The colour names used by the mysterious trap's random messages, in
+||| the original `rainbow[]` order.  They are canonical tokens: the
+||| English renderer uses them directly and the Japanese catalog
+||| translates them.
+public export
+rainbowColors : List String
+rainbowColors =
+  [ "amber", "aquamarine", "black", "blue", "brown", "clear", "crimson"
+  , "cyan", "ecru", "gold", "green", "grey", "magenta", "orange", "pink"
+  , "plaid", "purple", "red", "silver", "tan", "tangerine", "topaz"
+  , "turquoise", "vermilion", "violet", "white", "yellow"
+  ]
+
+public export
+rainbowColor : Bits64 -> String
+rainbowColor n = go (cast n) rainbowColors
+  where
+    go : Nat -> List String -> String
+    go _ [] = "amber"
+    go Z (c :: _) = c
+    go (S k) (_ :: cs) = go k cs

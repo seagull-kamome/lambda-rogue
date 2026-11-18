@@ -74,7 +74,17 @@ data Msg
   | BearTrap
   | FallAsleep
   | FloatOverTrap
-  | StrangeNoise
+  | MysteriousParallelDimension
+  | MysteriousLight String
+  | MysteriousNeckSting
+  | MysteriousSwirl
+  | MysteriousFlash String
+  | MysteriousSpike
+  | MysteriousSparks String
+  | MysteriousThirsty
+  | MysteriousTimeSpeed
+  | MysteriousTimeSlow
+  | MysteriousPackTurns String
   | FoundTrap TrapKind
   | FoundTrapUnknown
   | SearchNothing
@@ -330,7 +340,21 @@ msgEn FeelWeaker = "You feel weaker."
 msgEn BearTrap = "The bear trap snaps shut on your leg!"
 msgEn FallAsleep = "You fall asleep."
 msgEn FloatOverTrap = "You float over a trap."
-msgEn StrangeNoise = "You hear a strange noise in the distance."
+msgEn MysteriousParallelDimension =
+  "You are suddenly in a parallel dimension."
+msgEn (MysteriousLight color) =
+  "The light in here suddenly seems " ++ color ++ "."
+msgEn MysteriousNeckSting = "You feel a sting in the side of your neck."
+msgEn MysteriousSwirl = "Multi-colored lines swirl around you, then fade."
+msgEn (MysteriousFlash color) =
+  "A " ++ color ++ " light flashes in your eyes."
+msgEn MysteriousSpike = "A spike shoots past your ear!"
+msgEn (MysteriousSparks color) =
+  color ++ " sparks dance across your armor."
+msgEn MysteriousThirsty = "You suddenly feel very thirsty."
+msgEn MysteriousTimeSpeed = "You feel time speed up suddenly."
+msgEn MysteriousTimeSlow = "Time now seems to be going slower."
+msgEn (MysteriousPackTurns color) = "Your pack turns " ++ color ++ "!"
 msgEn (FoundTrap kind) = trapFoundEn kind
 msgEn FoundTrapUnknown = "You found a trap."
 msgEn SearchNothing = "You search but find nothing."
@@ -513,7 +537,17 @@ msgKey FeelWeaker = "feel-weaker"
 msgKey BearTrap = "bear-trap"
 msgKey FallAsleep = "fall-asleep"
 msgKey FloatOverTrap = "float-over-trap"
-msgKey StrangeNoise = "strange-noise"
+msgKey MysteriousParallelDimension = "mysterious-parallel-dimension"
+msgKey (MysteriousLight _) = "mysterious-light"
+msgKey MysteriousNeckSting = "mysterious-neck-sting"
+msgKey MysteriousSwirl = "mysterious-swirl"
+msgKey (MysteriousFlash _) = "mysterious-flash"
+msgKey MysteriousSpike = "mysterious-spike"
+msgKey (MysteriousSparks _) = "mysterious-sparks"
+msgKey MysteriousThirsty = "mysterious-thirsty"
+msgKey MysteriousTimeSpeed = "mysterious-time-speed"
+msgKey MysteriousTimeSlow = "mysterious-time-slow"
+msgKey (MysteriousPackTurns _) = "mysterious-pack-turns"
 msgKey (FoundTrap _) = "found-trap"
 msgKey FoundTrapUnknown = "found-trap-unknown"
 msgKey SearchNothing = "search-nothing"
@@ -673,7 +707,17 @@ msgArgs FeelWeaker = []
 msgArgs BearTrap = []
 msgArgs FallAsleep = []
 msgArgs FloatOverTrap = []
-msgArgs StrangeNoise = []
+msgArgs MysteriousParallelDimension = []
+msgArgs (MysteriousLight color) = [color]
+msgArgs MysteriousNeckSting = []
+msgArgs MysteriousSwirl = []
+msgArgs (MysteriousFlash color) = [color]
+msgArgs MysteriousSpike = []
+msgArgs (MysteriousSparks color) = [color]
+msgArgs MysteriousThirsty = []
+msgArgs MysteriousTimeSpeed = []
+msgArgs MysteriousTimeSlow = []
+msgArgs (MysteriousPackTurns color) = [color]
 msgArgs (FoundTrap kind) = [show kind]
 msgArgs FoundTrapUnknown = []
 msgArgs SearchNothing = []
@@ -845,7 +889,17 @@ sampleMessages =
   , BearTrap
   , FallAsleep
   , FloatOverTrap
-  , StrangeNoise
+  , MysteriousParallelDimension
+  , MysteriousLight "amber"
+  , MysteriousNeckSting
+  , MysteriousSwirl
+  , MysteriousFlash "blue"
+  , MysteriousSpike
+  , MysteriousSparks "red"
+  , MysteriousThirsty
+  , MysteriousTimeSpeed
+  , MysteriousTimeSlow
+  , MysteriousPackTurns "plaid"
   , FoundTrap Bear
   , FoundTrapUnknown
   , SearchNothing

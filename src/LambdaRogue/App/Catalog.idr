@@ -163,6 +163,36 @@ rustLeadJa src =
        "monster" => name ++ "が鎧を腐食させた。"
        _ => "鎧が腐食した。"
 
+colorNameJa : String -> String
+colorNameJa "amber" = "琥珀色"
+colorNameJa "aquamarine" = "アクアマリン色"
+colorNameJa "black" = "黒"
+colorNameJa "blue" = "青"
+colorNameJa "brown" = "茶色"
+colorNameJa "clear" = "透明"
+colorNameJa "crimson" = "深紅"
+colorNameJa "cyan" = "シアン"
+colorNameJa "ecru" = "生成り色"
+colorNameJa "gold" = "金色"
+colorNameJa "green" = "緑"
+colorNameJa "grey" = "灰色"
+colorNameJa "magenta" = "マゼンタ"
+colorNameJa "orange" = "オレンジ"
+colorNameJa "pink" = "桃色"
+colorNameJa "plaid" = "格子縞"
+colorNameJa "purple" = "紫"
+colorNameJa "red" = "赤"
+colorNameJa "silver" = "銀色"
+colorNameJa "tan" = "黄褐色"
+colorNameJa "tangerine" = "みかん色"
+colorNameJa "topaz" = "トパーズ色"
+colorNameJa "turquoise" = "ターコイズ色"
+colorNameJa "vermilion" = "朱色"
+colorNameJa "violet" = "すみれ色"
+colorNameJa "white" = "白"
+colorNameJa "yellow" = "黄色"
+colorNameJa other = other
+
 trapNameJa : String -> String
 trapNameJa "trapdoor" = "落とし戸"
 trapNameJa "arrow trap" = "矢の罠"
@@ -228,6 +258,10 @@ adjustArgs "trigger-trap" (kind :: _) = [trapNameJa kind]
 adjustArgs "not-on-stairs" (dir :: _) = [stairNameJa dir]
 adjustArgs "no-unidentified" (what :: _) = [identifyGroupJa what]
 adjustArgs "status-expires" (status :: _) = [statusExpiryJa status]
+adjustArgs "mysterious-light" (color :: _) = [colorNameJa color]
+adjustArgs "mysterious-flash" (color :: _) = [colorNameJa color]
+adjustArgs "mysterious-sparks" (color :: _) = [colorNameJa color]
+adjustArgs "mysterious-pack-turns" (color :: _) = [colorNameJa color]
 adjustArgs _ args = args
 
 ||| Japanese templates keyed by the same stable keys as `Core.Message`.
@@ -269,7 +303,17 @@ messageTemplatesJa =
   , ("bear-trap", "熊罠が足に食い込んだ！")
   , ("fall-asleep", "あなたは眠りに落ちた。")
   , ("float-over-trap", "あなたは罠の上を浮かんで通過した。")
-  , ("strange-noise", "遠くで奇妙な音が聞こえる。")
+  , ("mysterious-parallel-dimension", "突然、平行世界に飛ばされた。")
+  , ("mysterious-light", "このあたりの光が突然{}に見えた。")
+  , ("mysterious-neck-sting", "首筋にちくりと痛みを感じた。")
+  , ("mysterious-swirl", "色とりどりの線が周囲を渦巻き、やがて消えた。")
+  , ("mysterious-flash", "{}の光が目に閃いた。")
+  , ("mysterious-spike", "耳元を何かがかすめて飛んでいった！")
+  , ("mysterious-sparks", "鎧の上で{}の火花が踊った。")
+  , ("mysterious-thirsty", "突然、とても喉が渇いた。")
+  , ("mysterious-time-speed", "時間が急に速くなった気がする。")
+  , ("mysterious-time-slow", "時間の流れが遅くなった気がする。")
+  , ("mysterious-pack-turns", "荷物が{}に変わった！")
   , ("found-trap", "{}を見つけた。")
   , ("found-trap-unknown", "罠を見つけた。")
   , ("search-nothing", "探したが何も見つからなかった。")

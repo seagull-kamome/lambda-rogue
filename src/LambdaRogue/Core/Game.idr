@@ -785,6 +785,33 @@ ascendLevel st =
                          in st1
                        Nothing => say WarningMsg WayUpBlocked st
 
+mysteriousTrap : Step -> Step
+mysteriousTrap st =
+  let (choice, rng1) = uniform 11 st.game.rng
+      outcome : (Msg, Rng)
+      outcome =
+        case choice of
+          0 => (MysteriousParallelDimension, rng1)
+          1 => let (c, g) = uniform 27 rng1
+               in (MysteriousLight (rainbowColor c), g)
+          2 => (MysteriousNeckSting, rng1)
+          3 => (MysteriousSwirl, rng1)
+          4 => let (c, g) = uniform 27 rng1
+               in (MysteriousFlash (rainbowColor c), g)
+          5 => (MysteriousSpike, rng1)
+          6 => let (c, g) = uniform 27 rng1
+               in (MysteriousSparks (rainbowColor c), g)
+          7 => (MysteriousThirsty, rng1)
+          8 => (MysteriousTimeSpeed, rng1)
+          9 => (MysteriousTimeSlow, rng1)
+          _ => let (c, g) = uniform 27 rng1
+               in (MysteriousPackTurns (rainbowColor c), g)
+      message : Msg
+      message = fst outcome
+      g2 : Game
+      g2 = { rng := snd outcome } st.game
+  in say SystemMsg message ({ game := g2 } st)
+
 applyTrap : Trap -> Step -> Step
 applyTrap trap st =
   case trap.kind of
@@ -802,8 +829,7 @@ applyTrap trap st =
       say WarningMsg FallAsleep
         (setPlayer (addStatus Sleeping 6 st.game.player) st)
     Rust => rustPlayerArmor RustTrap st
-    Mysterious =>
-      say SystemMsg StrangeNoise st
+    Mysterious => mysteriousTrap st
 
 triggerTrap : Coord -> Step -> Step
 triggerTrap c st =
