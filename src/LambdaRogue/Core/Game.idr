@@ -1139,16 +1139,36 @@ eat iid st =
       case it.kind of
         Food f =>
           let g0 = removePackItem iid st.game
+              (nutrition, rng1) = uniform foodNutritionSpread st.game.rng
+              hunger0 = max 0 g0.player.hunger
               p : Player
-              p = { hunger := g0.player.hunger + hungerMax } g0.player
+              p = { hunger := min stomachSize
+                                 (hunger0 + foodNutritionBase
+                                          + the Int32 (cast nutrition)) } g0.player
               g1 : Game
-              g1 = { player := p } g0
-              message = if f == FoodRation
-                           then EatRation
-                           else EatSlimeMold
-          in event (ItemUsed iid)
-               (consume (say ItemMsg message
-                 ({ game := g1 } st)))
+              g1 = { player := p, rng := rng1 } g0
+              st0 = event (ItemUsed iid) ({ game := g1 } st)
+          in if f == SlimeMold
+                then consume (say ItemMsg EatSlimeMold st0)
+                else let (taste, rng2) = uniform 100 g1.rng
+                         awful = taste > 70
+                         trippy = hasStatus Hallucinating g1.player
+                         message = if awful
+                                      then if trippy then EatFoodAwfulTrippy
+                                                     else EatFoodAwful
+                                      else if trippy then EatFoodTrippy
+                                                     else EatFood
+                         g2 : Game
+                         g2 = { rng := rng2 } g1
+                         st1 = say ItemMsg message ({ game := g2 } st0)
+                     in if awful
+                           then let er = gainExperience g2.player 1 g2.rng
+                                    g3 : Game
+                                    g3 = { player := er.player
+                                         , rng := er.rng } g2
+                                in addLevelUpMessages er
+                                     (consume ({ game := g3 } st1))
+                           else consume st1
         _ => say WarningMsg CannotEat st
 
 equipRingAt : Bool -> Item -> Step -> Step

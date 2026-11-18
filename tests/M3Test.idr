@@ -248,15 +248,48 @@ potionTests = do
      in t >= 28 && t <= 31)
 
 
+||| The first seed whose second uniform draw (after the nutrition roll) is
+||| above 70, i.e. a food ration that tastes awful.
+awfulFoodSeed : Bits64
+awfulFoodSeed = search 1000 0
+  where
+    awfulAt : Bits64 -> Bool
+    awfulAt s =
+      let (_, g1) = uniform foodNutritionSpread (fromSeed s)
+          (taste, _) = uniform 100 g1
+      in taste > 70
+
+    search : Nat -> Bits64 -> Bits64
+    search Z s = s
+    search (S k) s = if awfulAt s then s else search k (s + 1)
+
+||| The first seed whose second draw is at most 70, a good-tasting ration.
+goodFoodSeed : Bits64
+goodFoodSeed = search 1000 0
+  where
+    goodAt : Bits64 -> Bool
+    goodAt s =
+      let (_, g1) = uniform foodNutritionSpread (fromSeed s)
+          (taste, _) = uniform 100 g1
+      in taste <= 70
+
+    search : Nat -> Bits64 -> Bits64
+    search Z s = s
+    search (S k) s = if goodAt s then s else search k (s + 1)
+
 foodTests : IO ()
 foodTests = do
   -- Food and hunger -------------------------------------------------------
   let ration = food 120
       gFood = setPlayerStats (\p => { hunger := 100 } p) (addToPack [ration] base)
       outFood = step (Eat 120) gFood
+      (nutrition, _) = uniform foodNutritionSpread gFood.rng
+      expectedHunger = min stomachSize
+                         (100 + foodNutritionBase
+                            + the Int32 (cast nutrition)) - 1
   check "eating consumes a turn" outFood.turnConsumed
-  check "eating adds a full ration of nutrition"
-    (outFood.game.player.hunger == 100 + hungerMax - 1)
+  check "eating adds rolled nutrition"
+    (outFood.game.player.hunger == expectedHunger)
   check "eating removes the food from the pack"
     (null outFood.game.player.inventory)
 
@@ -264,10 +297,47 @@ foodTests = do
       gMold = setPlayerStats (\p => { hunger := 100 } p)
                 (addToPack [mold] base)
       outMold = step (Eat 121) gMold
-  check "eating slime mold adds a full ration of nutrition"
-    (outMold.game.player.hunger == 100 + hungerMax - 1)
+      (moldNutrition, _) = uniform foodNutritionSpread gMold.rng
+      expectedMold = min stomachSize
+                       (100 + foodNutritionBase
+                          + the Int32 (cast moldNutrition)) - 1
+  check "eating slime mold adds rolled nutrition"
+    (outMold.game.player.hunger == expectedMold)
   check "eating slime mold reports the fruit"
-    (hasMessage "You eat the slime mold. It tastes wonderful." outMold)
+    (hasMessage "my, that was a yummy slime-mold" outMold)
+
+  let gAwful : Game
+      gAwful = { rng := fromSeed awfulFoodSeed }
+                 (setPlayerStats (\p => { hunger := 2000, exp := 0 } p)
+                   (addToPack [food 122] base))
+      outAwful = step (Eat 122) gAwful
+  check "an awful ration grants one experience point"
+    (outAwful.game.player.exp == 1)
+  check "an awful ration says so"
+    (hasMessage "yuk, this food tastes awful" outAwful)
+  check "a meal cannot exceed the stomach size"
+    (outAwful.game.player.hunger == stomachSize - 1)
+
+  let gGood : Game
+      gGood = { rng := fromSeed goodFoodSeed }
+                (setPlayerStats (\p => { hunger := 100, exp := 5 } p)
+                  (addToPack [food 123] base))
+      outGood = step (Eat 123) gGood
+  check "a good ration gives no experience"
+    (outGood.game.player.exp == 5)
+  check "a good ration says so"
+    (hasMessage "yum, that tasted good" outGood)
+
+  let gTrippy : Game
+      gTrippy = { rng := fromSeed awfulFoodSeed }
+                  (setPlayerStats
+                    (\p => { hunger := 100, exp := 0
+                           , statuses := MkStatus Hallucinating 10
+                                           :: p.statuses } p)
+                    (addToPack [food 124] base))
+      outTrippy = step (Eat 124) gTrippy
+  check "hallucination changes the awful-food message"
+    (hasMessage "bummer, this food tastes awful" outTrippy)
 
   let rHungry = tickSurvival ({ hunger := hungryAt + 1 } base.player)
   check "crossing the hunger threshold warns"

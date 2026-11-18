@@ -16,6 +16,21 @@ public export
 hungerMax : Int32
 hungerMax = startingHunger
 
+||| The most nutrition the stomach can hold (`STOMACHSIZE`).
+public export
+stomachSize : Int32
+stomachSize = 2000
+
+||| A meal adds `foodNutritionBase + rnd(400)` nutrition.  In the
+||| original this is `HUNGERTIME - 200 + rnd(400)`.
+public export
+foodNutritionBase : Int32
+foodNutritionBase = 1100
+
+public export
+foodNutritionSpread : Bits64
+foodNutritionSpread = 400
+
 public export
 hungryAt : Int32
 hungryAt = 300

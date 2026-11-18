@@ -106,7 +106,10 @@ data Msg
   | CannotQuaff
   | QuaffItem String
   | CannotEat
-  | EatRation
+  | EatFood
+  | EatFoodTrippy
+  | EatFoodAwful
+  | EatFoodAwfulTrippy
   | EatSlimeMold
   | AlreadyWearingRing
   | FingersFull
@@ -357,8 +360,11 @@ msgEn NoSuchItem = "You do not have that item."
 msgEn CannotQuaff = "You cannot quaff that."
 msgEn (QuaffItem name) = "You quaff the " ++ name ++ "."
 msgEn CannotEat = "You cannot eat that."
-msgEn EatRation = "You eat the food ration. You feel satisfied."
-msgEn EatSlimeMold = "You eat the slime mold. It tastes wonderful."
+msgEn EatFood = "yum, that tasted good"
+msgEn EatFoodTrippy = "oh, wow, that tasted good"
+msgEn EatFoodAwful = "yuk, this food tastes awful"
+msgEn EatFoodAwfulTrippy = "bummer, this food tastes awful"
+msgEn EatSlimeMold = "my, that was a yummy slime-mold"
 msgEn AlreadyWearingRing = "You are already wearing that ring."
 msgEn FingersFull = "Your fingers are already full."
 msgEn CannotPutOn = "You cannot put that on."
@@ -531,7 +537,10 @@ msgKey NoSuchItem = "no-such-item"
 msgKey CannotQuaff = "cannot-quaff"
 msgKey (QuaffItem _) = "quaff-item"
 msgKey CannotEat = "cannot-eat"
-msgKey EatRation = "eat-ration"
+msgKey EatFood = "eat-food"
+msgKey EatFoodTrippy = "eat-food-trippy"
+msgKey EatFoodAwful = "eat-food-awful"
+msgKey EatFoodAwfulTrippy = "eat-food-awful-trippy"
 msgKey EatSlimeMold = "eat-slime-mold"
 msgKey AlreadyWearingRing = "already-wearing-ring"
 msgKey FingersFull = "fingers-full"
@@ -684,7 +693,10 @@ msgArgs NoSuchItem = []
 msgArgs CannotQuaff = []
 msgArgs (QuaffItem name) = [name]
 msgArgs CannotEat = []
-msgArgs EatRation = []
+msgArgs EatFood = []
+msgArgs EatFoodTrippy = []
+msgArgs EatFoodAwful = []
+msgArgs EatFoodAwfulTrippy = []
 msgArgs EatSlimeMold = []
 msgArgs AlreadyWearingRing = []
 msgArgs FingersFull = []
@@ -849,7 +861,10 @@ sampleMessages =
   , CannotQuaff
   , QuaffItem "potion of healing"
   , CannotEat
-  , EatRation
+  , EatFood
+  , EatFoodTrippy
+  , EatFoodAwful
+  , EatFoodAwfulTrippy
   , EatSlimeMold
   , AlreadyWearingRing
   , FingersFull
