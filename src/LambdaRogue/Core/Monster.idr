@@ -160,6 +160,24 @@ public export
 hasAbility : MonsterAbility -> MonsterKind -> Bool
 hasAbility a k = elem a (monsterSpec k).abilities
 
+||| The `m_carry` percentage from the 5.4.4 monster table.  On a newly
+||| generated deepest level a monster with this percentage gets one
+||| random object in its pack.
+public export
+monsterCarry : MonsterKind -> Nat
+monsterCarry Centaur = 15
+monsterCarry Dragon = 100
+monsterCarry Griffin = 20
+monsterCarry Jabberwock = 70
+monsterCarry Medusa = 40
+monsterCarry Nymph = 100
+monsterCarry Orc = 15
+monsterCarry Troll = 50
+monsterCarry Vampire = 20
+monsterCarry Xeroc = 30
+monsterCarry Yeti = 30
+monsterCarry _ = 0
+
 ||| True while the monster is hiding as an object.  The status is set at
 ||| spawn for `MimicObject` kinds and removed as soon as the monster acts
 ||| or is attacked.

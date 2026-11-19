@@ -237,6 +237,37 @@ record GeneratedLevel where
   nextMonsterId : MonsterId
   nextItemId : ItemId
 
+setCarriedBy : MonsterId -> Item -> Item
+setCarriedBy mid i = { location := CarriedBy mid } i
+
+||| Give one monster its `m_carry` chance of a single ordinary object.
+||| The original `give_pack()` runs on the deepest level reached; during a
+||| normal descent that is exactly the newly generated level.  A monster
+||| with 0% still consumes the hundred-sided roll, matching the original.
+spawnOnePack : Depth -> Monster -> ItemId -> Rng
+             -> (Maybe Item, ItemId, Rng)
+spawnOnePack depth m nextId g0 =
+  let (carryRoll, g1) = uniform 100 g0
+  in if carryRoll < cast (monsterCarry m.kind)
+        then let (kindOpt, g2) = randomItemKind g1
+             in case kindOpt of
+                  Just kind =>
+                    let (item, g3) = makeItem depth nextId kind m.pos g2
+                    in (Just (setCarriedBy m.id item), nextId + 1, g3)
+                  Nothing => (Nothing, nextId, g2)
+        else (Nothing, nextId, g1)
+
+public export
+spawnMonsterPacks : Depth -> List Monster -> ItemId -> Rng
+                  -> (List Item, ItemId, Rng)
+spawnMonsterPacks depth [] nextId g = ([], nextId, g)
+spawnMonsterPacks depth (m :: ms) nextId g0 =
+  let (packOpt, nextId1, g1) = spawnOnePack depth m nextId g0
+      (rest, nextId2, g2) = spawnMonsterPacks depth ms nextId1 g1
+  in case packOpt of
+       Just item => (item :: rest, nextId2, g2)
+       Nothing => (rest, nextId2, g2)
+
 ||| Generate one level.  The caller supplies the next free monster and item
 ||| IDs so the whole run keeps unique IDs across levels.
 public export
@@ -256,19 +287,22 @@ generateLevel depth nextMonster nextItem g0 =
       roomCandidates = removeCoords (allRoomCells rooms) occupied0
       (monsters, nextMonster', g4) =
         spawnMonsters depth roomCandidates nextMonster g3
+      (packs, nextItemAfterPacks, g4b) =
+        spawnMonsterPacks depth monsters nextItem g4
       occupied1 = occupied0 ++ map (.pos) monsters
       amuletCandidates = removeCoords (allRoomCells rooms) occupied1
       (amulets, nextItemAfterAmulet, g5) =
         if depth == 26
-           then case pick amuletCandidates g4 of
+           then case pick amuletCandidates g4b of
                   (Just c, g') =>
                     let amulet : Item
-                        amulet = MkItem nextItem Amulet (OnFloor depth c) 1 0 False 0 False
+                        amulet = MkItem nextItemAfterPacks Amulet
+                                        (OnFloor depth c) 1 0 False 0 False
                         amulets' : List Item
                         amulets' = [amulet]
-                    in (amulets', nextItem + 1, g')
-                  (Nothing, g') => ([], nextItem, g')
-           else ([], nextItem, g4)
+                    in (amulets', nextItemAfterPacks + 1, g')
+                  (Nothing, g') => ([], nextItemAfterPacks, g')
+           else ([], nextItemAfterPacks, g4b)
       amuletCells = map itemPos amulets
       itemCandidates = removeCoords (allRoomCells rooms) (occupied1 ++ amuletCells)
       (items, nextItem', g6) =
@@ -281,7 +315,7 @@ generateLevel depth nextMonster nextItem g0 =
       level : Level
       level = MkLevel depth grid5 empty rooms monsters traps
                        (Just upPos) downStairs
-  in MkGeneratedLevel level (amulets ++ items) g8 nextMonster' nextItem'
+  in MkGeneratedLevel level (amulets ++ packs ++ items) g8 nextMonster' nextItem'
 
 ||| The hand-built M1 level, kept for presentation tests and as a stable
 ||| fixture for the movement/combat tests.

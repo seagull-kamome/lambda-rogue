@@ -132,11 +132,18 @@ monstersValid d lvl =
 
 itemsValid : Depth -> Level -> List Item -> Bool
 itemsValid d lvl items =
-  length items == itemCount d + goldPileCount d + (if d == 26 then 1 else 0)
+  length (filter onFloor items) == itemCount d + goldPileCount d
+                                   + (if d == 26 then 1 else 0)
   && length (filter (\i => i.kind == Amulet) items) == (if d == 26 then 1 else 0)
   && uniqueCoords (itemPositions items)
   && all valid items
   where
+    onFloor : Item -> Bool
+    onFloor i =
+      case i.location of
+        OnFloor _ _ => True
+        _ => False
+
     valid : Item -> Bool
     valid i =
       case i.location of
@@ -147,7 +154,13 @@ itemsValid d lvl items =
                 Amulet => d == 26
                 _ => i.count == 1)
         InPack => False
-        CarriedBy _ => False
+        CarriedBy mid =>
+          elem mid (map (.id) lvl.monsters)
+          && i.count == 1
+          && (case i.kind of
+                Gold => False
+                Amulet => False
+                _ => True)
 
 trapsValid : Level -> Bool
 trapsValid lvl =
@@ -241,10 +254,17 @@ run = do
     (\(d, gl) => gl.level.depth == d) generated
   checkAll "the monster count follows the depth table"
     (\(d, gl) => length gl.level.monsters == monsterCount d) generated
-  checkAll "the item count follows the depth table plus gold and the amulet"
-    (\(d, gl) => length gl.items == itemCount d + goldPileCount d
-                                  + (if d == 26 then 1 else 0))
+  checkAll "the floor item count follows the depth table plus gold and the amulet"
+    (\(d, gl) => length (filter (\i => case i.location of
+                                          OnFloor _ _ => True
+                                          _ => False) gl.items)
+                    == itemCount d + goldPileCount d
+                       + (if d == 26 then 1 else 0))
     generated
+  check "some monsters carry an object"
+    (any (\(_, gl) => any (\i => case i.location of
+                                     CarriedBy _ => True
+                                     _ => False) gl.items) generated)
   checkAll "there are at most three traps"
     (\(_, gl) => length gl.level.traps <= 3) generated
   check "the generator places secret doors"
