@@ -1157,14 +1157,28 @@ applyPotion PotionMagicDetection st =
                  g = { player := p' } g1
              in say ItemMsg SenseMagic ({ game := g } st)
 applyPotion PotionHasteSelf st =
-  let (extra, rng') = uniform 4 st.game.rng
-      turns : Int32
-      turns = cast extra + 4
-      p' = addStatus Hasted turns st.game.player
-      g : Game
-      g = { rng := rng' } st.game
-  in say ItemMsg MovingFaster
-       (setPlayer p' ({ game := g } st))
+  if hasStatus Hasted st.game.player
+     then let (extra, rng') = uniform 8 st.game.rng
+              p0 = st.game.player
+              p1 : Player
+              p1 = { statuses :=
+                       filter (\s => s.statusKind /= Hasted) p0.statuses } p0
+              p' : Player
+              p' = if extra == 0
+                      then p1
+                      else addStatus Fainted (cast extra + 1) p1
+              g : Game
+              g = { rng := rng', player := p' } st.game
+          in say WarningMsg FaintFromExhaustion ({ game := g } st)
+     else let (extra, rng') = uniform 4 st.game.rng
+              turns : Int32
+              turns = cast extra + 4
+              p' : Player
+              p' = addStatus Hasted turns st.game.player
+              g : Game
+              g = { rng := rng' } st.game
+          in say ItemMsg MovingFaster
+               (setPlayer p' ({ game := g } st))
 applyPotion PotionSeeInvisible st =
   let (turns, rng') = spread 850 st.game.rng
       p' = cureBlindness (addStatus SeeInvisible turns st.game.player)

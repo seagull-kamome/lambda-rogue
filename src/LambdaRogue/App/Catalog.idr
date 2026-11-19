@@ -428,6 +428,7 @@ messageTemplatesJa =
   , ("hungry", "腹が減った。")
   , ("weak-from-hunger", "空腹で弱っている。")
   , ("faint-from-hunger", "食料不足で気を失った。")
+  , ("faint-from-exhaustion", "疲労で気を失った。")
   , ("welcome", "lambda-rogueへようこそ。hjkl/yubnで移動、.で待機、,で拾う、>で降りる、iで持ち物、qで飲む。")
   , ("resumed-from-save", "セーブから再開した。")
   , ("recovered-from-autosave", "オートセーブから復元した。")

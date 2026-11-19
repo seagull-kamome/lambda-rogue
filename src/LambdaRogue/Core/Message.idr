@@ -199,6 +199,7 @@ data Msg
   | Hungry
   | WeakFromHunger
   | FaintFromHunger
+  | FaintFromExhaustion
   | Welcome
   | ResumedFromSave
   | RecoveredFromAutosave
@@ -493,6 +494,7 @@ msgEn (StatusExpires status) = statusExpiryEn status
 msgEn Hungry = "You are hungry."
 msgEn WeakFromHunger = "You are weak."
 msgEn FaintFromHunger = "You faint from lack of food."
+msgEn FaintFromExhaustion = "You faint from exhaustion."
 msgEn Welcome =
   "Welcome to lambda-rogue. hjkl/yubn move, . wait, , pick up, > descend, i inventory, q quit."
 msgEn ResumedFromSave = "Resumed from save."
@@ -662,6 +664,7 @@ msgKey (StatusExpires _) = "status-expires"
 msgKey Hungry = "hungry"
 msgKey WeakFromHunger = "weak-from-hunger"
 msgKey FaintFromHunger = "faint-from-hunger"
+msgKey FaintFromExhaustion = "faint-from-exhaustion"
 msgKey Welcome = "welcome"
 msgKey ResumedFromSave = "resumed-from-save"
 msgKey RecoveredFromAutosave = "recovered-from-autosave"
@@ -832,6 +835,7 @@ msgArgs (StatusExpires status) = [show status]
 msgArgs Hungry = []
 msgArgs WeakFromHunger = []
 msgArgs FaintFromHunger = []
+msgArgs FaintFromExhaustion = []
 msgArgs Welcome = []
 msgArgs ResumedFromSave = []
 msgArgs RecoveredFromAutosave = []
@@ -1014,6 +1018,7 @@ sampleMessages =
   , Hungry
   , WeakFromHunger
   , FaintFromHunger
+  , FaintFromExhaustion
   , Welcome
   , ResumedFromSave
   , RecoveredFromAutosave

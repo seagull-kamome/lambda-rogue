@@ -225,6 +225,15 @@ potionTests = do
     (let t = statusTurns Hasted outHaste.game.player
      in t >= 3 && t <= 6)
 
+  let haste2 = potion 119 PotionHasteSelf
+      outHaste2 = step (Quaff 119) (addToPack [haste2] outHaste.game)
+  check "drinking haste while hasted ends the haste"
+    (not (hasStatus Hasted outHaste2.game.player))
+  check "drinking haste while hasted makes the player faint"
+    (hasMessage "You faint from exhaustion." outHaste2)
+  check "the exhaustion faint lasts at most 7 turns"
+    (statusTurns Fainted outHaste2.game.player <= 7)
+
   let see = potion 110 PotionSeeInvisible
       outSee = step (Quaff 110) (addToPack [see] base)
   check "a see-invisible potion grants the status"
