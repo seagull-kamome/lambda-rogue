@@ -236,6 +236,7 @@ record GeneratedLevel where
   rng : Rng
   nextMonsterId : MonsterId
   nextItemId : ItemId
+  noFood : Int32
 
 setCarriedBy : MonsterId -> Item -> Item
 setCarriedBy mid i = { location := CarriedBy mid } i
@@ -244,35 +245,38 @@ setCarriedBy mid i = { location := CarriedBy mid } i
 ||| The original `give_pack()` runs on the deepest level reached; during a
 ||| normal descent that is exactly the newly generated level.  A monster
 ||| with 0% still consumes the hundred-sided roll, matching the original.
-spawnOnePack : Depth -> Monster -> ItemId -> Rng
-             -> (Maybe Item, ItemId, Rng)
-spawnOnePack depth m nextId g0 =
+spawnOnePack : Depth -> Monster -> ItemId -> Int32 -> Rng
+             -> (Maybe Item, ItemId, Int32, Rng)
+spawnOnePack depth m nextId noFood g0 =
   let (carryRoll, g1) = uniform 100 g0
   in if carryRoll < cast (monsterCarry m.kind)
-        then let (kindOpt, g2) = randomItemKind g1
+        then let (kindOpt, noFood1, g2) = randomItemKindWithFood noFood g1
              in case kindOpt of
                   Just kind =>
                     let (item, g3) = makeItem depth nextId kind m.pos g2
-                    in (Just (setCarriedBy m.id item), nextId + 1, g3)
-                  Nothing => (Nothing, nextId, g2)
-        else (Nothing, nextId, g1)
+                    in (Just (setCarriedBy m.id item), nextId + 1, noFood1, g3)
+                  Nothing => (Nothing, nextId, noFood1, g2)
+        else (Nothing, nextId, noFood, g1)
 
 public export
-spawnMonsterPacks : Depth -> List Monster -> ItemId -> Rng
-                  -> (List Item, ItemId, Rng)
-spawnMonsterPacks depth [] nextId g = ([], nextId, g)
-spawnMonsterPacks depth (m :: ms) nextId g0 =
-  let (packOpt, nextId1, g1) = spawnOnePack depth m nextId g0
-      (rest, nextId2, g2) = spawnMonsterPacks depth ms nextId1 g1
+spawnMonsterPacks : Depth -> List Monster -> ItemId -> Int32 -> Rng
+                  -> (List Item, ItemId, Int32, Rng)
+spawnMonsterPacks depth [] nextId noFood g = ([], nextId, noFood, g)
+spawnMonsterPacks depth (m :: ms) nextId noFood g0 =
+  let (packOpt, nextId1, noFood1, g1) =
+        spawnOnePack depth m nextId noFood g0
+      (rest, nextId2, noFood2, g2) =
+        spawnMonsterPacks depth ms nextId1 noFood1 g1
   in case packOpt of
-       Just item => (item :: rest, nextId2, g2)
-       Nothing => (rest, nextId2, g2)
+       Just item => (item :: rest, nextId2, noFood2, g2)
+       Nothing => (rest, nextId2, noFood2, g2)
 
 ||| Generate one level.  The caller supplies the next free monster and item
 ||| IDs so the whole run keeps unique IDs across levels.
 public export
-generateLevel : Depth -> MonsterId -> ItemId -> Rng -> GeneratedLevel
-generateLevel depth nextMonster nextItem g0 =
+generateLevelWithFood : Depth -> MonsterId -> ItemId -> Int32 -> Rng
+                      -> GeneratedLevel
+generateLevelWithFood depth nextMonster nextItem noFood g0 =
   let (rooms, g1) = genRooms g0
       grid0 = the Grid (replicate 22 (replicate 80 Rock))
       grid1 = carveRooms rooms grid0
@@ -287,8 +291,8 @@ generateLevel depth nextMonster nextItem g0 =
       roomCandidates = removeCoords (allRoomCells rooms) occupied0
       (monsters, nextMonster', g4) =
         spawnMonsters depth roomCandidates nextMonster g3
-      (packs, nextItemAfterPacks, g4b) =
-        spawnMonsterPacks depth monsters nextItem g4
+      (packs, nextItemAfterPacks, noFoodAfterPacks, g4b) =
+        spawnMonsterPacks depth monsters nextItem noFood g4
       occupied1 = occupied0 ++ map (.pos) monsters
       amuletCandidates = removeCoords (allRoomCells rooms) occupied1
       (amulets, nextItemAfterAmulet, g5) =
@@ -305,8 +309,10 @@ generateLevel depth nextMonster nextItem g0 =
            else ([], nextItemAfterPacks, g4b)
       amuletCells = map itemPos amulets
       itemCandidates = removeCoords (allRoomCells rooms) (occupied1 ++ amuletCells)
-      (items, nextItem', g6) =
-        spawnItems depth itemCandidates nextItemAfterAmulet g5
+      noFoodForItems = noFoodAfterPacks + 1
+      (items, nextItem', noFood', g6) =
+        spawnItemsWithFood depth itemCandidates nextItemAfterAmulet
+                           noFoodForItems g5
       occupied2 = occupied1 ++ amuletCells ++ map itemPos items
       trapCandidates = removeCoords (allWalkableCells grid4) occupied2
       (traps, g7) = spawnTraps depth trapCandidates g6
@@ -316,6 +322,14 @@ generateLevel depth nextMonster nextItem g0 =
       level = MkLevel depth grid5 empty rooms monsters traps
                        (Just upPos) downStairs
   in MkGeneratedLevel level (amulets ++ packs ++ items) g8 nextMonster' nextItem'
+                       noFood'
+
+||| Generate a level without food-priority state.  Fixtures use this
+||| wrapper; a real run calls `generateLevelWithFood`.
+public export
+generateLevel : Depth -> MonsterId -> ItemId -> Rng -> GeneratedLevel
+generateLevel depth nextMonster nextItem g0 =
+  generateLevelWithFood depth nextMonster nextItem 0 g0
 
 ||| The hand-built M1 level, kept for presentation tests and as a stable
 ||| fixture for the movement/combat tests.
@@ -347,7 +361,7 @@ sampleGameWithSeed seed =
       visible = compute lvl0.tiles lvl0.rooms player.pos
       lvl1 = { explored := visible } lvl0
       welcome = mkMessage 0 StoryMsg Welcome
-  in MkGame seed (fromSeed seed) 0 0 1 player [lvl1] items 2 2 [] []
+  in MkGame seed (fromSeed seed) 0 0 1 0 player [lvl1] items 2 2 [] []
              [welcome] Nothing visible
 
 public export
@@ -359,13 +373,13 @@ sampleGame = sampleGameWithSeed sampleSeed
 public export
 newGame : Bits64 -> Game
 newGame seed =
-  let gen = generateLevel 1 1 1 (fromSeed seed)
+  let gen = generateLevelWithFood 1 1 1 0 (fromSeed seed)
       (appearances, rng') = rollAppearances gen.rng
       start = fromMaybe (MkCoord 1 1) gen.level.upStairs
       player = initialPlayer start
       visible = compute gen.level.tiles gen.level.rooms start
       lvl = { explored := visible } gen.level
       welcome = mkMessage 0 StoryMsg Welcome
-  in MkGame seed rng' 0 0 1 player [lvl] gen.items
+  in MkGame seed rng' 0 0 1 gen.noFood player [lvl] gen.items
              gen.nextMonsterId gen.nextItemId [] appearances
              [welcome] Nothing visible

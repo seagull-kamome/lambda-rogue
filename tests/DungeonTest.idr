@@ -265,6 +265,12 @@ run = do
     (any (\(_, gl) => any (\i => case i.location of
                                      CarriedBy _ => True
                                      _ => False) gl.items) generated)
+  check "four foodless levels force food into the next level"
+    (let forced = generateLevelWithFood 1 1 1 4 (fromSeed 4242)
+     in forced.noFood == 0
+        && any (\i => case i.kind of
+                        Food _ => True
+                        _ => False) forced.items)
   checkAll "there are at most three traps"
     (\(_, gl) => length gl.level.traps <= 3) generated
   check "the generator places secret doors"

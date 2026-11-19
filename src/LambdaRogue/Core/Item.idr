@@ -194,14 +194,18 @@ pickWeapon = weightedPick (map (\w => (weaponWeight w, w)) allWeapons)
 pickArmor : Rng -> (Maybe ArmorKind, Rng)
 pickArmor = weightedPick (map (\a => (armorWeight a, a)) allArmors)
 
+||| True for food objects.  Food resets the original `no_food` counter.
+public export
+isFoodKind : Maybe ItemKind -> Bool
+isFoodKind (Just (Food _)) = True
+isFoodKind _ = False
+
 ||| Object-class distribution from the 5.4.4 `things` table:
 ||| potion 26, scroll 36, food 16, weapon 7, armor 7, ring 4, stick 4.
 ||| Gold is placed separately by `spawnItems`, so it is not part of this
-||| 100-point distribution.  The source's "starving players get food"
-||| override (`no_food > 3`) is intentionally not modelled.
-public export
-randomItemKind : Rng -> (Maybe ItemKind, Rng)
-randomItemKind g0 =
+||| 100-point distribution.
+randomItemClass : Rng -> (Maybe ItemKind, Rng)
+randomItemClass g0 =
   let (roll, g1) = uniform 100 g0
       r = cast roll
   in if r < 26
@@ -221,6 +225,27 @@ randomItemKind g0 =
                                         else if r < 96
                                                 then let (k, g2) = pickRing g1 in (map Ring k, g2)
                                                 else let (k, g2) = pickWand g1 in (map Wand k, g2)
+
+||| Pick an ordinary object kind while tracking the original `no_food`
+||| counter.  When it is greater than 3 the class roll is skipped and the
+||| object is forced to food, which resets the counter.  Food chosen by
+||| the ordinary distribution also resets it.
+public export
+randomItemKindWithFood : Int32 -> Rng -> (Maybe ItemKind, Int32, Rng)
+randomItemKindWithFood noFood g0 =
+  if noFood > 3
+     then let (fruitRoll, g1) = uniform 10 g0
+              food = if fruitRoll == 0 then SlimeMold else FoodRation
+          in (Just (Food food), 0, g1)
+     else let (kindOpt, g1) = randomItemClass g0
+          in (kindOpt, if isFoodKind kindOpt then 0 else noFood, g1)
+
+||| Pick one ordinary object kind without forcing food.
+public export
+randomItemKind : Rng -> (Maybe ItemKind, Rng)
+randomItemKind g0 =
+  let (kindOpt, _, g1) = randomItemKindWithFood 0 g0
+  in (kindOpt, g1)
 
 ||| True for objects that a potion of magic detection reveals: potions,
 ||| scrolls, rings and wands are inherently magical; weapons and armor
@@ -412,30 +437,33 @@ makeItem depth iid kind c g0 =
 
 ||| Spawn ordinary objects and gold on the given candidate cells, removing
 ||| each used cell.  Gold piles are placed after the ordinary objects so
-||| the object-class percentages stay authentic.
+||| the object-class percentages stay authentic.  The returned counter is
+||| the updated `no_food` value.
 public export
-spawnItems : Depth -> List Coord -> ItemId -> Rng
-          -> (List Item, ItemId, Rng)
-spawnItems depth candidates nextId g0 =
-  let (ordinary, nextId1, g1, remaining) =
-        spawnOrdinary (itemCount depth) candidates nextId g0 []
+spawnItemsWithFood : Depth -> List Coord -> ItemId -> Int32 -> Rng
+                  -> (List Item, ItemId, Int32, Rng)
+spawnItemsWithFood depth candidates nextId noFood g0 =
+  let (ordinary, nextId1, noFood', g1, remaining) =
+        spawnOrdinary (itemCount depth) candidates nextId noFood g0 []
       (gold, nextId2, g2) =
         spawnGold (goldPileCount depth) remaining nextId1 g1 []
-  in (ordinary ++ gold, nextId2, g2)
+  in (ordinary ++ gold, nextId2, noFood', g2)
   where
-    spawnOrdinary : Nat -> List Coord -> ItemId -> Rng -> List Item
-                 -> (List Item, ItemId, Rng, List Coord)
-    spawnOrdinary Z cs nextId g acc = (reverse acc, nextId, g, cs)
-    spawnOrdinary (S k) [] nextId g acc = (reverse acc, nextId, g, [])
-    spawnOrdinary (S k) cs nextId g acc =
-      let (kindOpt, g1) = randomItemKind g
+    spawnOrdinary : Nat -> List Coord -> ItemId -> Int32 -> Rng -> List Item
+                 -> (List Item, ItemId, Int32, Rng, List Coord)
+    spawnOrdinary Z cs nextId noFood g acc =
+      (reverse acc, nextId, noFood, g, cs)
+    spawnOrdinary (S k) [] nextId noFood g acc =
+      (reverse acc, nextId, noFood, g, [])
+    spawnOrdinary (S k) cs nextId noFood g acc =
+      let (kindOpt, noFood1, g1) = randomItemKindWithFood noFood g
           (coordOpt, g2) = pick cs g1
       in case (kindOpt, coordOpt) of
            (Just kind, Just c) =>
              let (item, g3) = makeItem depth nextId kind c g2
                  cs' = filter (/= c) cs
-             in spawnOrdinary k cs' (nextId + 1) g3 (item :: acc)
-           _ => (reverse acc, nextId, g2, cs)
+             in spawnOrdinary k cs' (nextId + 1) noFood1 g3 (item :: acc)
+           _ => (reverse acc, nextId, noFood1, g2, cs)
 
     spawnGold : Nat -> List Coord -> ItemId -> Rng -> List Item
              -> (List Item, ItemId, Rng)
@@ -449,6 +477,16 @@ spawnItems depth candidates nextId g0 =
                  cs' = filter (/= c) cs
              in spawnGold k cs' (nextId + 1) g2 (item :: acc)
            Nothing => (reverse acc, nextId, g1)
+
+||| Spawn items without the food-priority override.  Kept for fixtures
+||| that only need the ordinary object distribution.
+public export
+spawnItems : Depth -> List Coord -> ItemId -> Rng
+          -> (List Item, ItemId, Rng)
+spawnItems depth candidates nextId g0 =
+  let (items, nextId', _, g1) =
+        spawnItemsWithFood depth candidates nextId 0 g0
+  in (items, nextId', g1)
 
 ||| The fixed fallback appearance lists.  `rollAppearances` shuffles these
 ||| once per run, so the same kind always has the same appearance inside a

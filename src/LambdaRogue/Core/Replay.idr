@@ -141,6 +141,7 @@ gameCode g =
   ++ "|rng:" ++ stateHex g.rng
   ++ "|turn:" ++ show g.turn
   ++ "|depth:" ++ show g.depth
+  ++ "|noFood:" ++ show g.noFood
   ++ "|player:" ++ playerCode g.player
   ++ "|levels:" ++ listCode levelCode g.levels
   ++ "|items:" ++ listCode itemCode g.items

@@ -730,13 +730,14 @@ descendLevel st =
                        (DescendLevel g'.depth)
                        ({ game := g' } st)))
               Nothing =>
-                let gen = generateLevel (g.depth + 1) g.nextMonsterId
-                                        g.nextItemId g.rng
+                let gen = generateLevelWithFood (g.depth + 1) g.nextMonsterId
+                                        g.nextItemId g.noFood g.rng
                     start = fromMaybe (MkCoord 1 1) gen.level.upStairs
                     player' : Player
                     player' = { pos := start } g.player
                     g' : Game
                     g' = { depth := g.depth + 1
+                         , noFood := gen.noFood
                          , levels := gen.level :: g.levels
                          , items := g.items ++ gen.items
                          , rng := gen.rng

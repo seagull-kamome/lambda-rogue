@@ -1300,6 +1300,9 @@ record Game where
   ||| daemon uses this quiet-turn count instead of the absolute turn number.
   quietTurns : Turn
   depth : Depth
+  ||| Newly generated levels since the last food object.  Above 3 the
+  ||| next ordinary object is forced to be food (the original `no_food`).
+  noFood : Int32
   player : Player
   levels : List Level
   items : List Item

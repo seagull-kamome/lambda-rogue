@@ -39,6 +39,14 @@ hasMessageContaining text out = any (\m => contains text m.text) out.messages
 hasEvent : (Event -> Bool) -> Outcome -> Bool
 hasEvent p out = any p out.events
 
+||| Find a seed whose ordinary object draw is food.  Deterministic and
+||| used only by the no-food counter checks.
+firstFoodSeed : Bits64 -> Bits64
+firstFoodSeed s =
+  if isFoodKind (fst (randomItemKind (fromSeed s)))
+     then s
+     else firstFoodSeed (s + 1)
+
 setPlayerStats : (Player -> Player) -> Game -> Game
 setPlayerStats f g =
   let p : Player
@@ -193,6 +201,13 @@ appearanceTests = do
                      (the (List Bits64) [1 .. 300])
      in elem (Just (Food FoodRation)) kinds
         && elem (Just (Food SlimeMold)) kinds)
+  check "four foodless levels force the next object to be food"
+    (let (kindOpt, noFood', _) = randomItemKindWithFood 4 (fromSeed 9)
+     in isFoodKind kindOpt && noFood' == 0)
+  check "ordinary food resets the no-food counter"
+    (let seed = firstFoodSeed 1
+         (kindOpt, noFood', _) = randomItemKindWithFood 3 (fromSeed seed)
+     in isFoodKind kindOpt && noFood' == 0)
   check "slime mold sells for the same two gold as a ration"
     (itemGoldValue (Food SlimeMold) == 2)
 
