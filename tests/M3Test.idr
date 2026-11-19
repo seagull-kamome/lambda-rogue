@@ -189,12 +189,15 @@ potionTests = do
       outConfusion = step (Quaff 106) (addToPack [confusion] base)
   check "a confusion potion confuses the player"
     (hasStatus Confused outConfusion.game.player)
+  check "a confusion potion lasts 18 or 19 turns after quaffing"
+    (let t = statusTurns Confused outConfusion.game.player
+     in t == 18 || t == 19)
 
   let hallucination = potion 130 PotionHallucination
       outHallucination = step (Quaff 130) (addToPack [hallucination] base)
   check "a hallucination potion lasts about 850 turns"
     (let t = statusTurns Hallucinating outHallucination.game.player
-     in t >= 807 && t <= 892)
+     in t >= 807 && t <= 891)
 
   let blindness = potion 107 PotionBlindness
       outBlindness = step (Quaff 107) (addToPack [blindness] base)
@@ -202,7 +205,7 @@ potionTests = do
     (hasStatus Blinded outBlindness.game.player)
   check "a blindness potion lasts about 850 turns"
     (let t = statusTurns Blinded outBlindness.game.player
-     in t >= 807 && t <= 892)
+     in t >= 807 && t <= 891)
 
   let detect = potion 108 PotionDetectMonsters
       watcher = MkMonster 1 Emu (MkCoord 30 10) 4 4 Awake []
@@ -210,11 +213,17 @@ potionTests = do
                     (setMonster watcher (addToPack [detect] base))
   check "a detect-monsters potion grants the status"
     (hasStatus DetectMonsters outDetect.game.player)
+  check "a detect-monsters potion lasts 18 or 19 turns after quaffing"
+    (let t = statusTurns DetectMonsters outDetect.game.player
+     in t == 18 || t == 19)
 
   let haste = potion 109 PotionHasteSelf
       outHaste = step (Quaff 109) (addToPack [haste] base)
   check "a haste potion grants the hasted status"
     (hasStatus Hasted outHaste.game.player)
+  check "a haste potion lasts 3 to 6 turns after quaffing"
+    (let t = statusTurns Hasted outHaste.game.player
+     in t >= 3 && t <= 6)
 
   let see = potion 110 PotionSeeInvisible
       outSee = step (Quaff 110) (addToPack [see] base)
@@ -222,7 +231,7 @@ potionTests = do
     (hasStatus SeeInvisible outSee.game.player)
   check "a see-invisible potion lasts about 850 turns"
     (let t = statusTurns SeeInvisible outSee.game.player
-     in t >= 807 && t <= 892)
+     in t >= 807 && t <= 891)
 
   let seeBlind = potion 114 PotionSeeInvisible
       gSeeBlind = setPlayerStats
@@ -245,7 +254,7 @@ potionTests = do
     (hasStatus Levitated outLevitation.game.player)
   check "a levitation potion lasts about 30 turns"
     (let t = statusTurns Levitated outLevitation.game.player
-     in t >= 28 && t <= 31)
+     in t >= 28 && t <= 30)
 
 
 ||| The first seed whose second uniform draw (after the nutrition roll) is

@@ -62,7 +62,7 @@ export IDRIS2_CFLAGS="-Wno-parentheses-equality"
 ./verify.sh
 ```
 
-クリーンビルド、全テスト（1102 チェック）、PTY 上での起動・描画・終了を
+クリーンビルド、全テスト（1105 チェック）、PTY 上での起動・描画・終了を
 順に実行します。テストデータは `build/verify-data` に隔離され、
 実際のセーブ・戦績・設定には触れません。
 

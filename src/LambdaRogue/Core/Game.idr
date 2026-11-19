@@ -1043,7 +1043,7 @@ pickUp st =
 spread : Int32 -> Rng -> (Int32, Rng)
 spread n g =
   let base = n - n `div` 20
-      (extra, g') = uniform (cast (n `div` 10 + 1)) g
+      (extra, g') = uniform (cast (n `div` 10)) g
   in (base + cast extra, g')
 
 applyPotion : PotionKind -> Step -> Step
@@ -1107,8 +1107,8 @@ applyPotion PotionPoison st =
              in say WarningMsg WeakerHeadClears
                   (setPlayer p' ({ game := g } st))
 applyPotion PotionConfusion st =
-  let (turns, rng') = roll 1 8 st.game.rng
-      p' = addStatus Confused (turns + 4) st.game.player
+  let (turns, rng') = spread 20 st.game.rng
+      p' = addStatus Confused turns st.game.player
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg FeelConfused (setPlayer p' ({ game := g } st))
@@ -1126,12 +1126,12 @@ applyPotion PotionBlindness st =
       g = { rng := rng' } st.game
   in say WarningMsg Blinded (setPlayer p' ({ game := g } st))
 applyPotion PotionDetectMonsters st =
-  let (turns, rng') = roll 1 8 st.game.rng
+  let (turns, rng') = spread 20 st.game.rng
       g0 : Game
       g0 = { rng := rng' } st.game
   in if null (currentLevel g0).monsters
         then say ItemMsg StrangeFeeling ({ game := g0 } st)
-        else let p' = addStatus DetectMonsters (turns + 4) g0.player
+        else let p' = addStatus DetectMonsters turns g0.player
              in say ItemMsg SenseMonsters
                   (setPlayer p' ({ game := g0 } st))
 applyPotion PotionMagicDetection st =
@@ -1157,8 +1157,10 @@ applyPotion PotionMagicDetection st =
                  g = { player := p' } g1
              in say ItemMsg SenseMagic ({ game := g } st)
 applyPotion PotionHasteSelf st =
-  let (turns, rng') = roll 1 8 st.game.rng
-      p' = addStatus Hasted (turns + 4) st.game.player
+  let (extra, rng') = uniform 4 st.game.rng
+      turns : Int32
+      turns = cast extra + 4
+      p' = addStatus Hasted turns st.game.player
       g : Game
       g = { rng := rng' } st.game
   in say ItemMsg MovingFaster

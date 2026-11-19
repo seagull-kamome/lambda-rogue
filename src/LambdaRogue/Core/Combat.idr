@@ -51,15 +51,17 @@ public export
 playerArmorClass : Player -> Int32
 playerArmorClass p = p.armor - p.ringArmor
 
-||| The original `swing()`: roll 1d20 and compare `res + wplus` with
-||| `(20 - at_lvl) - op_arm`.  Used by arrow and dart traps, which pass
-||| the player's level and armor class.
+||| The original `swing()`: draw `rnd(20)` (0–19) and compare
+||| `res + wplus` with `(20 - at_lvl) - op_arm`.  Used by arrow and dart
+||| traps, which pass the player's level and armor class.
 public export
 swing : Int32 -> Int32 -> Int32 -> Rng -> (Bool, Rng)
 swing atLevel opArm wplus g =
-  let (res, g') = roll 1 20 g
+  let (res, g') = uniform 20 g
+      res' : Int32
+      res' = cast res
       need = (20 - atLevel) - opArm
-  in (res + wplus >= need, g')
+  in (res' + wplus >= need, g')
 
 clampPercent : Int32 -> Int32
 clampPercent n = max 0 (min 100 n)
