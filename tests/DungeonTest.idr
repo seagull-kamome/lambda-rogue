@@ -164,7 +164,7 @@ itemsValid d lvl items =
 
 trapsValid : Level -> Bool
 trapsValid lvl =
-  length lvl.traps <= 3
+  length lvl.traps <= 10
   && uniqueCoords (map (.pos) lvl.traps)
   && all valid lvl.traps
   where
@@ -271,8 +271,13 @@ run = do
         && any (\i => case i.kind of
                         Food _ => True
                         _ => False) forced.items)
-  checkAll "there are at most three traps"
-    (\(_, gl) => length gl.level.traps <= 3) generated
+  checkAll "there are at most ten traps"
+    (\(_, gl) => length gl.level.traps <= 10) generated
+  checkAll "levels ten and deeper always have a trap"
+    (\(d, gl) => d < 10 || not (null gl.level.traps)) generated
+  checkAll "the trap count follows the depth formula"
+    (\(d, gl) => d < 10
+                 || length gl.level.traps <= 1 + cast (d `div` 4)) generated
   check "the generator places secret doors"
     (any (\(_, gl) => countTile (Door Secret) gl.level.tiles > 0) generated)
   checkAll "secret doors look like walls to movement"

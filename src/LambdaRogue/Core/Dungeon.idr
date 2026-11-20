@@ -202,10 +202,18 @@ allWalkableCells g =
 trapKinds : List TrapKind
 trapKinds = [TrapDoor, ArrowTrap, Sleep, Bear, Teleport, DartTrap, Rust, Mysterious]
 
+||| Trap density from the 5.4.4 `new_level()`: one roll decides whether
+||| the level has traps (`rnd(10) < depth`), then `rnd(depth / 4) + 1`
+||| traps are placed, capped at ten.  Depths 1-9 only sometimes have a
+||| trap; depths 10 and deeper always have at least one.
 spawnTraps : Depth -> List Coord -> Rng -> (List Trap, Rng)
 spawnTraps depth candidates g0 =
-  let (count, g1) = randInt 0 3 g0
-  in go (cast count) candidates g1 []
+  let (appears, g1) = uniform 10 g0
+  in if appears < cast depth
+        then let (extra, g2) = uniform (cast (depth `div` 4)) g1
+                 count = min 10 (cast extra + 1)
+             in go count candidates g2 []
+        else ([], g1)
   where
     go : Nat -> List Coord -> Rng -> List Trap -> (List Trap, Rng)
     go Z _ g acc = (reverse acc, g)
