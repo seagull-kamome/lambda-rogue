@@ -447,6 +447,20 @@ beamTarget g d = go (beamCells g d)
         Just m => Just (c, m)
         Nothing => go cs
 
+||| The original clears `vf_hit` and releases the player's hold when a
+||| venus flytrap dies.  The hold flag is shared with other sources, so
+||| every `Held` status is cleared just as the original `ISHELD` is.
+releaseFlytrap : Monster -> Game -> Game
+releaseFlytrap m g =
+  if m.kind == VenusFlytrap
+     then { vfHits := 0
+          , player :=
+              { statuses := filter (\s => s.statusKind /= Held)
+                                   g.player.statuses
+              } g.player
+          } g
+     else g
+
 damageMonster : Monster -> Int32 -> AttackLead -> Step -> Step
 damageMonster m dmg lead st =
   let g = st.game
@@ -458,8 +472,10 @@ damageMonster m dmg lead st =
                  lvl' = removeMonster m.id lvl
                  g1 : Game
                  g1 = updateCurrentLevel (const lvl') g
+                 g1r : Game
+                 g1r = releaseFlytrap m g1
                  g1d : Game
-                 g1d = dropCarriedBy m.id m.pos g1
+                 g1d = dropCarriedBy m.id m.pos g1r
                  spec = monsterSpec m.kind
                  er = gainExperience g1d.player
                                    (monsterExpGain spec m.maxHp) g1d.rng
@@ -578,8 +594,10 @@ attackMonster m st =
              lvl' = removeMonster m.id lvl
              g2 : Game
              g2 = updateCurrentLevel (const lvl') g1
+             g2r : Game
+             g2r = releaseFlytrap m g2
              g2d : Game
-             g2d = dropCarriedBy m.id m.pos g2
+             g2d = dropCarriedBy m.id m.pos g2r
              spec = monsterSpec m.kind
              er = gainExperience g2d.player
                                (monsterExpGain spec m.maxHp) g2d.rng
@@ -2006,8 +2024,51 @@ rangedStrike m st =
                  Hit dmg => applyRangedHit lead m dmg g1 st
                  Killed dmg => applyRangedHit lead m dmg g1 st
 
-monsterStrike : Monster -> Step -> Step
-monsterStrike m st =
+||| A venus flytrap's damage follows the original `vf_hit` string rewrite:
+||| the first hit deals 1, each later hit deals one more than the current
+||| counter, and even a miss deals the current counter.  The counter is
+||| shared by every flytrap and only a flytrap's death resets it.
+flytrapStrike : Monster -> Step -> Step
+flytrapStrike m st =
+  let g = st.game
+      (result, rng') = monsterAttack g.player m g.rng
+      g1 : Game
+      g1 = { rng := rng' } g
+      vf = g1.vfHits
+      hit = case result of
+              Miss => False
+              _ => True
+      dmg = if hit then vf + 1 else vf
+      vf' = if hit then vf + 1 else vf
+      hp' = g1.player.hp - dmg
+      player' : Player
+      player' = { hp := max 0 hp' } g1.player
+      g2 : Game
+      g2 = { player := player', vfHits := vf' } g1
+  in if hp' <= 0
+       then let g3 : Game
+                g3 = { over := Just (Dead (KilledBy m.kind)) } g2
+            in event PlayerDied
+                 (say WarningMsg
+                   (Die True (KilledBy m.kind))
+                   ({ game := g3 } st))
+       else if hit
+               then event (MonsterAttacked m.id dmg)
+                      (monsterAbilityOnHit m
+                        (say CombatMsg
+                          (MonsterHitsYou m.kind dmg)
+                          ({ game := g2 } st)))
+               else if dmg > 0
+                       then event (MonsterAttacked m.id dmg)
+                              (say CombatMsg
+                                (MonsterMisses m.kind)
+                                ({ game := g2 } st))
+                       else say CombatMsg
+                              (MonsterMisses m.kind)
+                              ({ game := g2 } st)
+
+ordinaryMonsterStrike : Monster -> Step -> Step
+ordinaryMonsterStrike m st =
   let g = st.game
       (result, rng') = monsterAttack g.player m g.rng
       g1 : Game
@@ -2038,6 +2099,12 @@ monsterStrike m st =
               (say WarningMsg
                 (Die True (KilledBy m.kind))
                 ({ game := g2 } st))
+
+monsterStrike : Monster -> Step -> Step
+monsterStrike m st =
+  if m.kind == VenusFlytrap
+     then flytrapStrike m st
+     else ordinaryMonsterStrike m st
 
 neighborCells : Coord -> List Coord
 neighborCells c = map (\d => add c (delta d)) directions

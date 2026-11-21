@@ -142,6 +142,7 @@ gameCode g =
   ++ "|turn:" ++ show g.turn
   ++ "|depth:" ++ show g.depth
   ++ "|noFood:" ++ show g.noFood
+  ++ "|vfHits:" ++ show g.vfHits
   ++ "|player:" ++ playerCode g.player
   ++ "|levels:" ++ listCode levelCode g.levels
   ++ "|items:" ++ listCode itemCode g.items

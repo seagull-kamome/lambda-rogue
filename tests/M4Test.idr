@@ -875,6 +875,40 @@ monsterAbilityTests = do
     (maybe False (\m => m.pos == MkCoord 10 5)
        (monsterById 22 outFlytrap.game))
 
+  let flytrap = adjacent 23 VenusFlytrap 20
+      outFirst = step Wait (vulnerablePlayer (setMonster flytrap base))
+      outSecond = step Wait outFirst.game
+  check "the first venus flytrap hit deals one damage"
+    (outFirst.game.player.hp == 99 && outFirst.game.vfHits == 1)
+  check "a venus flytrap hit escalates"
+    (outSecond.game.player.hp == 97 && outSecond.game.vfHits == 2)
+
+  let lowArmor : Game
+      lowArmor =
+        setPlayerStats (\p => { hp := 100, maxHp := 100, armor := 0 } p)
+          (setMonster (MkMonster 24 VenusFlytrap (MkCoord 5 5)
+                                  20 20 Chasing [])
+            ({ vfHits := 3 } base))
+      missOutcomes : List Outcome
+      missOutcomes =
+        [ step Wait ({ rng := fromSeed k } lowArmor) | k <- [0..63] ]
+  check "a missed venus flytrap attack still deals its counter"
+    (isJust (find (\o => hasMessageContaining "misses" o
+                           && o.game.player.hp == 97
+                           && o.game.vfHits == 3)
+                  missOutcomes))
+
+  let gKillFlytrap = withStatus Held 5
+        (setPlayerStats (\p => { strength := 100, level := 100 } p)
+          ({ vfHits := 2 }
+            (setMonster (MkMonster 25 VenusFlytrap (MkCoord 5 5)
+                                    1 1 Chasing []) base)))
+      outKillFlytrap = step (Move E) gKillFlytrap
+  check "killing a venus flytrap resets its damage counter"
+    (outKillFlytrap.game.vfHits == 0)
+  check "killing a venus flytrap releases the player"
+    (not (hasStatus Held outKillFlytrap.game.player))
+
 playerStatusTests : IO ()
 playerStatusTests = do
   let outSleep = step (Move E) (withStatus Sleeping 5 base)

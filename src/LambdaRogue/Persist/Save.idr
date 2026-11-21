@@ -407,6 +407,7 @@ validGame g =
   g.turn >= 0
   && g.quietTurns >= 0
   && g.noFood >= 0
+  && g.vfHits >= 0
   && g.depth >= 1 && g.depth <= 26
   && length g.messages <= 200
   && validPlayer g
@@ -426,6 +427,7 @@ gameToJSON g =
     , ("quietTurns", jsonInt g.quietTurns)
     , ("depth", jsonInt g.depth)
     , ("noFood", jsonInt g.noFood)
+    , ("vfHits", jsonInt g.vfHits)
     , ("player", playerToJSON g.player)
     , ("levels", JArray (map levelToJSON g.levels))
     , ("items", JArray (map itemToJSON g.items))
@@ -461,6 +463,9 @@ gameFromJSON j = do
   noFood <- case field "noFood" j of
               Nothing => pure 0
               Just v => asInt32 v
+  vfHits <- case field "vfHits" j of
+              Nothing => pure 0
+              Just v => asInt32 v
   player <- field "player" j >>= playerFromJSON
   levels <- field "levels" j >>= arrayOf levelFromJSON
   items <- field "items" j >>= arrayOf itemFromJSON
@@ -471,7 +476,8 @@ gameFromJSON j = do
   messages <- field "messages" j >>= arrayOf messageFromJSON
   over <- field "over" j >>= maybeGameOverFromJSON
   visible <- field "visible" j >>= asString >>= fromHex
-  let g = MkGame seed rng turn quietTurns depth noFood player levels items
+  let g = MkGame seed rng turn quietTurns depth noFood vfHits
+                  player levels items
                   nextMonsterId nextItemId knownKinds appearances
                   messages over visible
   if validGame g then Just g else Nothing

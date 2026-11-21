@@ -124,6 +124,7 @@ $XDG_DATA_HOME/lambda-rogue/       # なければ ~/.local/share/lambda-rogue/
     "quietTurns": 7,
     "depth": 7,
     "noFood": 1,
+    "vfHits": 0,
     "player": {
       "pos": { "x": 12, "y": 7 },
       "hp": 12, "maxHp": 20,
@@ -222,6 +223,7 @@ $XDG_DATA_HOME/lambda-rogue/       # なければ ~/.local/share/lambda-rogue/
 | `quietTurns` | integer | HP を失わずに消費した連続ターン数。0 以上。古いセーブで省略時は 0 |
 | `depth` | integer | 現在の階層。1..26 |
 | `noFood` | integer | 食料なしで生成した連続階数。0 以上。古いセーブで省略時は 0 |
+| `vfHits` | integer | venus flytrap の共有ダメージカウンタ。0 以上。古いセーブで省略時は 0 |
 | `player` | object | 3.4 |
 | `levels` | array | 訪問済みの階層。3.6 |
 | `items` | array | ラン全体のアイテム。3.7 |
@@ -239,6 +241,8 @@ $XDG_DATA_HOME/lambda-rogue/       # なければ ~/.local/share/lambda-rogue/
 - `noFood` もスキーマ v1 の任意フィールドで、省略時は 0。負値は拒否する。
   食料優先生成のカウンタで、ゲーム内容に影響するためリプレイの
   `gameDigest` にも含める。
+- `vfHits` もスキーマ v1 の任意フィールドで、省略時は 0。負値は拒否する。
+  venus flytrap の追加ダメージを決めるため、`gameDigest` に含める。
 - `knownKinds` と `appearances` はランごとの知識・外見で、`settings.json`
   とは独立している。
 - `messages` は `gameDigest` の対象外。リプレイ検証では状態だけを比較する。

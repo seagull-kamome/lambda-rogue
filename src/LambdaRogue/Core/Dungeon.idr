@@ -369,7 +369,7 @@ sampleGameWithSeed seed =
       visible = compute lvl0.tiles lvl0.rooms player.pos
       lvl1 = { explored := visible } lvl0
       welcome = mkMessage 0 StoryMsg Welcome
-  in MkGame seed (fromSeed seed) 0 0 1 0 player [lvl1] items 2 2 [] []
+  in MkGame seed (fromSeed seed) 0 0 1 0 0 player [lvl1] items 2 2 [] []
              [welcome] Nothing visible
 
 public export
@@ -388,6 +388,6 @@ newGame seed =
       visible = compute gen.level.tiles gen.level.rooms start
       lvl = { explored := visible } gen.level
       welcome = mkMessage 0 StoryMsg Welcome
-  in MkGame seed rng' 0 0 1 gen.noFood player [lvl] gen.items
+  in MkGame seed rng' 0 0 1 gen.noFood 0 player [lvl] gen.items
              gen.nextMonsterId gen.nextItemId [] appearances
              [welcome] Nothing visible

@@ -1303,6 +1303,11 @@ record Game where
   ||| Newly generated levels since the last food object.  Above 3 the
   ||| next ordinary object is forced to be food (the original `no_food`).
   noFood : Int32
+  ||| The original `vf_hit` counter.  Every successful venus flytrap
+  ||| attack raises it, increasing later flytrap damage, and killing a
+  ||| flytrap resets it.  It is shared by all flytraps, matching the
+  ||| original damage-string rewrite on the monster template.
+  vfHits : Int32
   player : Player
   levels : List Level
   items : List Item
