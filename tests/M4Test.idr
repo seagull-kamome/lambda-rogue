@@ -491,6 +491,17 @@ wandTests = do
   damageWand WandCold 403 "cold damages a monster"
   damageWand WandMagicMissile 404 "magic missile damages a monster"
 
+  let dragonTarget = MkMonster 1 Dragon (MkCoord 6 5) 100 100 Awake []
+      outReflect = step (Zap 414 E)
+                     (setMonster dragonTarget
+                       (addToPack [wand 414 WandFire 5] base))
+  check "fire bounces off a dragon"
+    (hasMessage "The flame bounces off the dragon." outReflect)
+  check "a reflected flame does not damage the dragon"
+    (case monsterById 1 outReflect.game of
+       Just m => m.hp == 100
+       Nothing => False)
+
   let outInvis = step (Zap 405 E)
                    (addToPack [wand 405 WandInvisibility 5] base)
   check "invisibility grants the status"

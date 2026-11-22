@@ -1514,7 +1514,12 @@ applyWand WandInvisibility dir st =
 applyWand WandLightning dir st =
   zapDamage 6 6 WandLightning dir st
 applyWand WandFire dir st =
-  zapDamage 6 6 WandFire dir st
+  case beamTarget st.game dir of
+    Nothing => say WarningMsg BeamFizzles st
+    Just (_, m) =>
+      if m.kind == Dragon
+         then say ItemMsg FlameBouncesOffDragon st
+         else zapDamage 6 6 WandFire dir st
 applyWand WandCold dir st =
   zapDamage 6 6 WandCold dir st
 applyWand WandMagicMissile dir st =

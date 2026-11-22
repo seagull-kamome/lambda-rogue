@@ -192,6 +192,7 @@ data Msg
   | MonsterWakesUp MonsterKind
   | RangedMiss AttackLead
   | RangedHit AttackLead Int32
+  | FlameBouncesOffDragon
   | RingHums
   | TooWeakToDrain
   | DrainLifeTingling
@@ -489,6 +490,7 @@ msgEn (MonsterWakesUp kind) = "The " ++ monsterName kind ++ " wakes up."
 msgEn (RangedMiss lead) = leadText lead ++ "You dodge it."
 msgEn (RangedHit lead dmg) =
   leadText lead ++ "You take " ++ show dmg ++ " damage."
+msgEn FlameBouncesOffDragon = "The flame bounces off the dragon."
 msgEn RingHums = "The ring hums, and the world shifts."
 msgEn TooWeakToDrain = "You are too weak to use it."
 msgEn DrainLifeTingling = "You have a tingling feeling."
@@ -661,6 +663,7 @@ msgKey (MonsterOpensDoor _) = "monster-opens-door"
 msgKey (MonsterWakesUp _) = "monster-wakes-up"
 msgKey (RangedMiss _) = "ranged-miss"
 msgKey (RangedHit _ _) = "ranged-hit"
+msgKey FlameBouncesOffDragon = "flame-bounces-off-dragon"
 msgKey RingHums = "ring-hums"
 msgKey TooWeakToDrain = "too-weak-to-drain"
 msgKey DrainLifeTingling = "drain-life-tingling"
@@ -834,6 +837,7 @@ msgArgs (MonsterOpensDoor kind) = [monsterName kind]
 msgArgs (MonsterWakesUp kind) = [monsterName kind]
 msgArgs (RangedMiss lead) = [leadArg lead]
 msgArgs (RangedHit lead dmg) = [leadArg lead, show dmg]
+msgArgs FlameBouncesOffDragon = []
 msgArgs RingHums = []
 msgArgs TooWeakToDrain = []
 msgArgs DrainLifeTingling = []
@@ -1019,6 +1023,7 @@ sampleMessages =
   , MonsterWakesUp Orc
   , RangedMiss (ArrowFire Orc)
   , RangedHit (BreathFire Dragon) 12
+  , FlameBouncesOffDragon
   , RingHums
   , TooWeakToDrain
   , DrainLifeTingling
