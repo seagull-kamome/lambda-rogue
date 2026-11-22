@@ -441,6 +441,19 @@ potionDetectionTests = do
     (not (elem (Potion PotionMagicDetection) outNoMagic.game.knownKinds)
      && not (hasStatus DetectMagic outNoMagic.game.player))
 
+  let carrier = MkMonster 30 Orc (MkCoord 60 15) 10 10 Asleep []
+      carried = MkItem 612 (Potion PotionHealing) (CarriedBy 30)
+                        1 0 False 0 False
+      gCarried0 = setMonster carrier (addToPack [detection] base)
+      gCarried : Game
+      gCarried = { items := carried :: gCarried0.items } gCarried0
+      outCarried = step (Quaff 609) gCarried
+  check "magic detection finds magic carried by a monster"
+    (elem (Potion PotionMagicDetection) outCarried.game.knownKinds
+     && hasStatus DetectMagic outCarried.game.player)
+  check "magic detection does not roll dice"
+    (outCarried.game.rng == gCarried.rng)
+
   let monsterPotion = potion 611 PotionDetectMonsters
       gNoMonsters = setItems [monsterPotion]
                       (addToPack [monsterPotion] base)

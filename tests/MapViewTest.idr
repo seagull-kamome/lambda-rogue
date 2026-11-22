@@ -216,6 +216,23 @@ run = do
        Just c => c.glyph == '.'
        Nothing => False)
 
+  let magicCarrier = MkMonster 11 Orc monsterPos 10 10 Asleep []
+      carriedPotion = newItem 22 (Potion PotionHealing) (CarriedBy 11)
+      lvlCarrier : Level
+      lvlCarrier = { monsters := [magicCarrier] } (currentLevel gRoom)
+      gCarrier0 : Game
+      gCarrier0 = updateCurrentLevel (const lvlCarrier) gRoom
+      gCarrier : Game
+      gCarrier = { items := carriedPotion :: gCarrier0.items } gCarrier0
+      pCarrier : Player
+      pCarrier = { statuses := [MkStatus DetectMagic 5] } gCarrier.player
+      gCarrierDetect : Game
+      gCarrierDetect = { player := pCarrier } gCarrier
+  check "magic detection marks a monster carrying magic"
+    (case cellFor gCarrierDetect monsterPos Floor of
+       Just c => c.glyph == '$' && c.style == detectedItemStyle
+       Nothing => False)
+
   let stalker = MkMonster 5 Phantom monsterPos 10 10 Chasing []
       lvlStalker : Level
       lvlStalker = { monsters := [stalker] } (currentLevel gRoom)

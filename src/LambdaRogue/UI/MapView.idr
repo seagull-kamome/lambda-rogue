@@ -246,15 +246,22 @@ public export
 cellForWith : Theme -> Maybe Coord -> Game -> Coord -> Tile -> Maybe Cell
 cellForWith theme hovered g c t =
   let lvl = currentLevel g
+      carriesMagic : MonsterId -> Bool
+      carriesMagic mid =
+        any (\i => i.location == CarriedBy mid && isMagicalItem i) g.items
       base =
         if g.player.pos == c
            then Just (MkCell '@' (playerStyleIn theme))
            else if getBit c.x c.y g.visible
                    then case monsterAt lvl c of
                           Just m =>
-                            if monsterHidden g m
-                               then Just (cellOfIn theme t)
-                               else Just (monsterCellIn theme False m)
+                            if hasStatus DetectMagic g.player
+                               && carriesMagic m.id
+                               then Just (MkCell '$'
+                                            (detectedItemStyleIn theme))
+                               else if monsterHidden g m
+                                       then Just (cellOfIn theme t)
+                                       else Just (monsterCellIn theme False m)
                           Nothing =>
                             case itemAt g c of
                               Just i => Just (MkCell (itemGlyph i.kind)
@@ -270,10 +277,14 @@ cellForWith theme hovered g c t =
                    else if getBit c.x c.y lvl.explored
                            then case monsterAt lvl c of
                                   Just m =>
-                                    if hasStatus DetectMonsters g.player
-                                       && not (monsterHidden g m)
-                                       then Just (monsterCellIn theme True m)
-                                       else Just (dimCellIn theme t)
+                                    if hasStatus DetectMagic g.player
+                                       && carriesMagic m.id
+                                       then Just (MkCell '$'
+                                            (detectedItemStyleIn theme))
+                                       else if hasStatus DetectMonsters g.player
+                                               && not (monsterHidden g m)
+                                               then Just (monsterCellIn theme True m)
+                                               else Just (dimCellIn theme t)
                                   Nothing =>
                                     case itemAt g c of
                                       Just i =>
@@ -287,10 +298,14 @@ cellForWith theme hovered g c t =
                                       Nothing => Just (dimCellIn theme t)
                            else case monsterAt lvl c of
                                   Just m =>
-                                    if hasStatus DetectMonsters g.player
-                                       && not (monsterHidden g m)
-                                       then Just (monsterCellIn theme True m)
-                                       else Nothing
+                                    if hasStatus DetectMagic g.player
+                                       && carriesMagic m.id
+                                       then Just (MkCell '$'
+                                            (detectedItemStyleIn theme))
+                                       else if hasStatus DetectMonsters g.player
+                                               && not (monsterHidden g m)
+                                               then Just (monsterCellIn theme True m)
+                                               else Nothing
                                   Nothing => Nothing
   in map (highlightCell c hovered) base
 

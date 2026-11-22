@@ -152,6 +152,13 @@ monsterAt lvl c = find (\m => m.pos == c) lvl.monsters
 monsterById : MonsterId -> Level -> Maybe Monster
 monsterById i lvl = find (\m => m.id == i) lvl.monsters
 
+||| True when a monster carries at least one magic item.  Magic detection
+||| reveals those items at the monster's position, as the original does.
+public export
+monsterCarriesMagic : Game -> MonsterId -> Bool
+monsterCarriesMagic g mid =
+  any (\i => i.location == CarriedBy mid && isMagicalItem i) g.items
+
 updateMonster : MonsterId -> (Monster -> Monster) -> Level -> Level
 updateMonster i f lvl =
   { monsters := map (\m => if m.id == i then f m else m) lvl.monsters } lvl
@@ -1065,6 +1072,20 @@ spread n g =
       (extra, g') = uniform (cast (n `div` 10)) g
   in (base + cast extra, g')
 
+||| Magic and monster detection only identify themselves when there is
+||| something on the level to reveal.  With nothing there, the potion
+||| produces a strange feeling and its kind remains unknown.  Magic
+||| detection also counts items carried by monsters on this level.
+detectionHasTarget : PotionKind -> Game -> Bool
+detectionHasTarget PotionMagicDetection g =
+  any (\i => case i.location of
+               OnFloor d _ => d == g.depth && isMagicalItem i
+               _ => False) g.items
+  || any (monsterCarriesMagic g) (map (.id) (currentLevel g).monsters)
+detectionHasTarget PotionDetectMonsters g =
+  not (null (currentLevel g).monsters)
+detectionHasTarget _ _ = True
+
 applyPotion : PotionKind -> Step -> Step
 applyPotion PotionHealing st =
   let p = st.game.player
@@ -1154,19 +1175,17 @@ applyPotion PotionDetectMonsters st =
              in say ItemMsg SenseMonsters
                   (setPlayer p' ({ game := g0 } st))
 applyPotion PotionMagicDetection st =
-  let (turns, rng') = roll 1 8 st.game.rng
+  let g0 = st.game
       magicCells = mapMaybe
                      (\i => case i.location of
                               OnFloor d c =>
-                                if d == st.game.depth && isMagicalItem i
+                                if d == g0.depth && isMagicalItem i
                                    then Just c else Nothing
                               _ => Nothing)
-                     st.game.items
-      g0 : Game
-      g0 = { rng := rng' } st.game
-  in if null magicCells
-        then say ItemMsg StrangeFeeling ({ game := g0 } st)
-        else let p' = addStatus DetectMagic (turns + 4) g0.player
+                     g0.items
+  in if not (detectionHasTarget PotionMagicDetection g0)
+        then say ItemMsg StrangeFeeling st
+        else let p' = addStatus DetectMagic 2 g0.player
                  g1 : Game
                  g1 = updateCurrentLevel
                         (\l => { explored :=
@@ -1219,18 +1238,6 @@ applyPotion PotionRaiseLevel st =
       g = { player := er.player, rng := er.rng } st.game
       st1 = say ItemMsg MoreExperienced ({ game := g } st)
   in addLevelUpMessages er st1
-
-||| Magic and monster detection only identify themselves when there is
-||| something on the level to reveal.  With nothing there, the potion
-||| produces a strange feeling and its kind remains unknown.
-detectionHasTarget : PotionKind -> Game -> Bool
-detectionHasTarget PotionMagicDetection g =
-  any (\i => case i.location of
-               OnFloor d _ => d == g.depth && isMagicalItem i
-               _ => False) g.items
-detectionHasTarget PotionDetectMonsters g =
-  not (null (currentLevel g).monsters)
-detectionHasTarget _ _ = True
 
 quaff : ItemId -> Step -> Step
 quaff iid st =
