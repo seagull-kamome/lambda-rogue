@@ -193,6 +193,8 @@ data Msg
   | RangedMiss AttackLead
   | RangedHit AttackLead Int32
   | RingHums
+  | TooWeakToDrain
+  | DrainLifeTingling
   | YouAreAsleep
   | YouAreParalyzed
   | StatusExpires StatusKind
@@ -488,6 +490,8 @@ msgEn (RangedMiss lead) = leadText lead ++ "You dodge it."
 msgEn (RangedHit lead dmg) =
   leadText lead ++ "You take " ++ show dmg ++ " damage."
 msgEn RingHums = "The ring hums, and the world shifts."
+msgEn TooWeakToDrain = "You are too weak to use it."
+msgEn DrainLifeTingling = "You have a tingling feeling."
 msgEn YouAreAsleep = "You are asleep."
 msgEn YouAreParalyzed = "You are paralyzed."
 msgEn (StatusExpires status) = statusExpiryEn status
@@ -658,6 +662,8 @@ msgKey (MonsterWakesUp _) = "monster-wakes-up"
 msgKey (RangedMiss _) = "ranged-miss"
 msgKey (RangedHit _ _) = "ranged-hit"
 msgKey RingHums = "ring-hums"
+msgKey TooWeakToDrain = "too-weak-to-drain"
+msgKey DrainLifeTingling = "drain-life-tingling"
 msgKey YouAreAsleep = "you-are-asleep"
 msgKey YouAreParalyzed = "you-are-paralyzed"
 msgKey (StatusExpires _) = "status-expires"
@@ -829,6 +835,8 @@ msgArgs (MonsterWakesUp kind) = [monsterName kind]
 msgArgs (RangedMiss lead) = [leadArg lead]
 msgArgs (RangedHit lead dmg) = [leadArg lead, show dmg]
 msgArgs RingHums = []
+msgArgs TooWeakToDrain = []
+msgArgs DrainLifeTingling = []
 msgArgs YouAreAsleep = []
 msgArgs YouAreParalyzed = []
 msgArgs (StatusExpires status) = [show status]
@@ -1012,6 +1020,8 @@ sampleMessages =
   , RangedMiss (ArrowFire Orc)
   , RangedHit (BreathFire Dragon) 12
   , RingHums
+  , TooWeakToDrain
+  , DrainLifeTingling
   , YouAreAsleep
   , YouAreParalyzed
   , StatusExpires Confused

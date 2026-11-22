@@ -81,6 +81,10 @@ setMonster m g =
       lvl = { monsters := [m] } lvl0
   in updateCurrentLevel (const lvl) g
 
+setMonsters : List Monster -> Game -> Game
+setMonsters ms g =
+  updateCurrentLevel (\l => { monsters := ms } l) g
+
 setTraps : List Trap -> Game -> Game
 setTraps ts g =
   updateCurrentLevel (\l => { traps := ts } l) g
@@ -507,12 +511,41 @@ wandTests = do
   let gDrain = setPlayerStats (\p => { hp := 5 } p)
                  (setMonster bigRat (addToPack [wand 408 WandDrainLife 5] base))
       outDrain = step (Zap 408 E) gDrain
-  check "drain life heals the player"
-    (outDrain.game.player.hp > 5)
-  check "drain life damages the monster"
+  check "drain life halves the player's HP"
+    (outDrain.game.player.hp == 2)
+  check "drain life damages the monster by the drained half"
     (case monsterById 1 outDrain.game of
-       Just m => m.hp < 100
-       Nothing => True)
+       Just m => m.hp == 98
+       Nothing => False)
+
+  let twoTargets = [ MkMonster 1 Emu (MkCoord 6 5) 100 100 Awake []
+                   , MkMonster 2 Orc (MkCoord 7 5) 100 100 Awake []
+                   ]
+      gDrainMany = setPlayerStats (\p => { hp := 10 } p)
+                     (setMonsters twoTargets
+                       (addToPack [wand 413 WandDrainLife 5] base))
+      outDrainMany = step (Zap 413 E) gDrainMany
+  check "drain life spreads the drained half among the room"
+    (outDrainMany.game.player.hp == 5
+     && maybe False (\m => m.hp == 98) (monsterById 1 outDrainMany.game)
+     && maybe False (\m => m.hp == 98) (monsterById 2 outDrainMany.game))
+
+  let gTooWeak = setPlayerStats (\p => { hp := 1 } p)
+                   (addToPack [wand 411 WandDrainLife 3] base)
+      outTooWeak = step (Zap 411 E) gTooWeak
+  check "drain life refuses a player below two HP"
+    (hasMessage "You are too weak to use it." outTooWeak)
+  check "a refused drain life keeps its charge"
+    (case findPackItem outTooWeak.game 411 of
+       Just i => i.charges == 3
+       Nothing => False)
+
+  let gTingle = setPlayerStats (\p => { hp := 10 } p)
+                  (addToPack [wand 412 WandDrainLife 3] base)
+      outTingle = step (Zap 412 E) gTingle
+  check "drain life with no monsters only tingles"
+    (hasMessage "You have a tingling feeling." outTingle
+     && outTingle.game.player.hp == 10)
 
   let outNothing = step (Zap 409 E)
                      (addToPack [wand 409 WandNothing 5] base)

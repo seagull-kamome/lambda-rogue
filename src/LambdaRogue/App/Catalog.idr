@@ -410,6 +410,8 @@ messageTemplatesJa =
   , ("monster-snatches-item", "{}があなたの{}を奪って消えた！")
   , ("monster-freezes-you", "{}があなたを凍らせた！")
   , ("monster-holds-you", "{}があなたを拘束した！")
+  , ("too-weak-to-drain", "それは使うには弱りすぎている。")
+  , ("drain-life-tingling", "体がちりちりする。")
   , ("monster-drains-max-hp", "{}が最大HPを{}吸い取った！")
   , ("monster-tries-weaken", "{}はあなたを弱めようとしたが、力は保たれた。")
   , ("monster-weakens-you", "{}があなたを弱らせた！")

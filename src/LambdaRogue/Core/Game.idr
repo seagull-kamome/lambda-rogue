@@ -1492,6 +1492,17 @@ zapDamage n sides lead dir st =
           g = { rng := rng' } st.game
       in damageMonster m dmg lead ({ game := g } st)
 
+||| The original drain life spreads damage among every monster in the
+||| player's room.  In a corridor it reaches only adjacent monsters; the
+||| original also reaches the room behind a door, which lambda-rogue
+||| approximates with adjacency.
+drainTargets : Game -> List Monster
+drainTargets g =
+  let lvl = currentLevel g
+  in case roomAt lvl g.player.pos of
+       Just r => filter (\m => roomContains r m.pos) lvl.monsters
+       Nothing => filter (\m => adjacent g.player.pos m.pos) lvl.monsters
+
 applyWand : WandKind -> Dir -> Step -> Step
 applyWand WandLight dir st =
   say ItemMsg WandFloodsLight
@@ -1552,17 +1563,25 @@ applyWand WandSlowMonster dir st =
           g = updateCurrentLevel (const lvl') st.game
       in say ItemMsg (MonsterSlowsDown m.kind)
            ({ game := g } st)
-applyWand WandDrainLife dir st =
-  case beamTarget st.game dir of
-    Nothing => say WarningMsg BeamFizzles st
-    Just (_, m) =>
-      let (dmg, rng') = roll 2 6 st.game.rng
-          p = st.game.player
-          p' : Player
-          p' = { hp := min p.maxHp (p.hp + dmg) } p
-          g : Game
-          g = { rng := rng', player := p' } st.game
-      in damageMonster m dmg DrainLife ({ game := g } st)
+applyWand WandDrainLife _ st =
+  let g = st.game
+      p = g.player
+      monsters = drainTargets g
+      count = length monsters
+  in if count == 0
+       then say ItemMsg DrainLifeTingling st
+       else let hp' = p.hp `div` 2
+                each = hp' `div` cast count
+                p' : Player
+                p' = { hp := hp' } p
+                g' : Game
+                g' = { player := p' } g
+                st0 : Step
+                st0 = { game := g' } st
+            in if each <= 0
+                  then st0
+                  else foldl (\s, m => damageMonster m each DrainLife s)
+                             st0 monsters
 applyWand WandNothing dir st =
   say ItemMsg NothingHappens st
 applyWand WandTeleportAway dir st =
@@ -1591,15 +1610,18 @@ zap iid dir st =
     Just it =>
       case it.kind of
         Wand k =>
-          if it.charges <= 0
-             then say WarningMsg WandSputters st
-             else let shown = itemDisplayNameIn st.game it
-                      g1 : Game
-                      g1 = updateItem iid (\i => { charges := i.charges - 1 } i)
-                             (addKnown (Wand k) st.game)
-                      st1 = say ItemMsg (ZapWand shown)
-                                    ({ game := g1 } st)
-                  in consume (applyWand k dir st1)
+          if it.charges <= 0 then
+            say WarningMsg WandSputters st
+          else if k == WandDrainLife && st.game.player.hp < 2 then
+            consume (say WarningMsg TooWeakToDrain st)
+          else
+            let shown = itemDisplayNameIn st.game it
+                g1 : Game
+                g1 = updateItem iid (\i => { charges := i.charges - 1 } i)
+                       (addKnown (Wand k) st.game)
+                st1 = say ItemMsg (ZapWand shown)
+                            ({ game := g1 } st)
+            in consume (applyWand k dir st1)
         _ => say WarningMsg CannotZap st
 
 throwPath : Game -> Dir -> List Coord

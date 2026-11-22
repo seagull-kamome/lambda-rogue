@@ -63,6 +63,7 @@ canSee g from to =
         [] => True
         (_ :: _) => all (\p => maybe False transparent (tileAt g p)) (c :: init cs)
 
+public export
 roomContains : Room -> Coord -> Bool
 roomContains r (MkCoord x y) =
   x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h
