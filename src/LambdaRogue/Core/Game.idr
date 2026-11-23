@@ -1086,6 +1086,12 @@ detectionHasTarget PotionDetectMonsters g =
   not (null (currentLevel g).monsters)
 detectionHasTarget _ _ = True
 
+||| The original `choose_str("strange", "normal")` after a detection
+||| potion finds nothing.
+noTargetFeeling : Game -> Msg
+noTargetFeeling g =
+  if hasStatus Hallucinating g.player then StrangeFeeling else NormalFeeling
+
 applyPotion : PotionKind -> Step -> Step
 applyPotion PotionHealing st =
   let p = st.game.player
@@ -1166,11 +1172,11 @@ applyPotion PotionBlindness st =
       g = { rng := rng' } st.game
   in say WarningMsg Blinded (setPlayer p' ({ game := g } st))
 applyPotion PotionDetectMonsters st =
-  let (turns, rng') = spread 20 st.game.rng
-      g0 : Game
-      g0 = { rng := rng' } st.game
+  let g0 = st.game
+      turns : Int32
+      turns = 20
   in if null (currentLevel g0).monsters
-        then say ItemMsg StrangeFeeling ({ game := g0 } st)
+        then say ItemMsg (noTargetFeeling g0) ({ game := g0 } st)
         else let p' = addStatus DetectMonsters turns g0.player
              in say ItemMsg SenseMonsters
                   (setPlayer p' ({ game := g0 } st))
@@ -1184,7 +1190,7 @@ applyPotion PotionMagicDetection st =
                               _ => Nothing)
                      g0.items
   in if not (detectionHasTarget PotionMagicDetection g0)
-        then say ItemMsg StrangeFeeling st
+        then say ItemMsg (noTargetFeeling g0) st
         else let p' = addStatus DetectMagic 2 g0.player
                  g1 : Game
                  g1 = updateCurrentLevel

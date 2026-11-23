@@ -341,6 +341,7 @@ messageTemplatesJa =
   , ("sense-monsters", "怪物の気配を感じる。")
   , ("sense-magic", "魔法の気配を感じる。")
   , ("strange-feeling", "しばらく奇妙な感じがしたが、すぐに消えた。")
+  , ("normal-feeling", "しばらく普通の感じがしたが、すぐに消えた。")
   , ("moving-faster", "体の動きが速くなった。")
   , ("eyes-strange", "目が奇妙な感じになった。")
   , ("float", "ふわりと宙に浮いた。")

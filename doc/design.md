@@ -1,7 +1,7 @@
 # lambda-rogue 設計書
 
-- Status: Draft 1.47（M5 スライス 35 完了。魔法感知の即時化）
-- Date: 2026-11-22
+- Status: Draft 1.48（M5 スライス 36 完了。モンスター感知の固定時間）
+- Date: 2026-11-23
 - Target: Idris 2 0.8.0 / rc2 backend / termui 0.1.0 / rc2base 0.1.0
 - Reference: Rogue 5.4.4 (Berkeley Rogue) を第一候補とする
 - 関連: `doc/core-api.md`, `doc/rogue-reference.md`, `doc/persistence.md`
@@ -1859,6 +1859,16 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 - [x] `M4Test` に所持品の感知と乱数非消費、`MapViewTest` に所持品の
   `$` 表示の 3 チェックを追加し、全体は 1128 チェックになった。
 
+#### M5 スライス 36: モンスター感知の固定時間（完了）
+
+- [x] `PotionDetectMonsters` の `spread(20)` を削除し、原本の
+  `HUHDURATION` と同じ固定 20 ターンにした。乱数は消費しない。
+- [x] 感知対象がないときの feeling を原本の `choose_str("strange",
+  "normal")` に合わせ、幻覚中だけ strange、通常は normal にした。
+- [x] `NormalFeeling` をメッセージカタログに追加した。
+- [x] `M4Test` に乱数非消費、20 ターン、幻覚中の strange feeling の
+  3 チェックを追加し、全体は 1131 チェックになった。
+
 ## 10. リスクと未決事項
 
 ### 10.1 リスク
@@ -2003,3 +2013,4 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 | D78 | 2026-11-21 | 杖の drain life はプレイヤー HP を半分にし、その半分を同じ部屋のモンスターで等分して与える。HP 1 以下では充填を消費せず、対象なしでは HP を変えない。通路では隣接モンスターのみを対象にする。 | 原本 `drain()` は `s_hpt /= 2` の後 `s_hpt / cnt` を各部屋のモンスターに与える。扉の先の部屋まで含む所属判定は複雑なため、通路は隣接に簡略化する。旧実装の 2d6 自己回復は原本と逆方向だった。 |
 | D79 | 2026-11-22 | 火の杖のビームがドラゴンに当たった場合、`6d6` を振らずに反射メッセージだけを出し、ビームをドラゴンの位置で止める。 | 原本 `fire_bolt()` は命中判定後、`name == "flame"` かつドラゴンなら `hit_monster()` を呼ばずに「the flame bounces off the dragon」と表示し、`used = TRUE` でビームを終了する。ダメージロールは `hit_monster()` の中で行われるため、反射時は乱数を消費しない。 |
 | D80 | 2026-11-22 | 魔法感知は乱数を振らず、同階の床とモンスター所持品の魔法物品を対象にする。`DetectMagic` は 1 行動分だけ付け、所持品はモンスター位置に `$` で表示する。床の物品は探索済みマスへの記録を残す。 | 原本 `P_TFIND` は `lvl_obj` と全モンスターの `t_pack` を走査し、`is_magic()` の物品位置に `$` を上書きして `--More--` で見せる。乱数は消費しない。即時表示をそのまま再現すると UI の再描画モデルに合わないため、1 行動分の状態で近似し、床の記憶は既存の使い勝手を保つ。 |
+| D81 | 2026-11-23 | モンスター感知は固定 20 ターンとし、乱数を消費しない。対象がないときは通常 normal feeling、幻覚中のみ strange feeling を出す。 | 原本は `HUHDURATION`（20）をそのまま `do_pot(P_DETMON, TRUE)` に渡し、`spread()` を使わない。対象なしの分岐は `msg(..., choose_str("normal", "strange"))` で、`choose_str` は幻覚中に第 1 引数を返す。lambda-rogue の `spread(20)` と常時 strange はどちらも原本と異なっていた。 |

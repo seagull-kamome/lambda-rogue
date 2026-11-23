@@ -433,13 +433,23 @@ potionDetectionTests = do
       outNoMagic = step (Quaff 609)
                      (updateCurrentLevel (\l => { explored := empty } l)
                        noMagic)
-  check "empty magic detection gives a strange feeling"
+  check "empty magic detection gives a normal feeling"
     (hasMessage
-      "You have a strange feeling for a moment, then it passes."
+      "You have a normal feeling for a moment, then it passes."
       outNoMagic)
   check "empty magic detection stays unidentified"
     (not (elem (Potion PotionMagicDetection) outNoMagic.game.knownKinds)
      && not (hasStatus DetectMagic outNoMagic.game.player))
+
+  let outNoMagicTrip = step (Quaff 609)
+                         (withStatus Hallucinating 10
+                           (updateCurrentLevel
+                             (\l => { explored := empty } l)
+                             noMagic))
+  check "empty magic detection feels strange while hallucinating"
+    (hasMessage
+      "You have a strange feeling for a moment, then it passes."
+      outNoMagicTrip)
 
   let carrier = MkMonster 30 Orc (MkCoord 60 15) 10 10 Asleep []
       carried = MkItem 612 (Potion PotionHealing) (CarriedBy 30)
@@ -458,15 +468,15 @@ potionDetectionTests = do
       gNoMonsters = setItems [monsterPotion]
                       (addToPack [monsterPotion] base)
       outNoMonsters = step (Quaff 611) gNoMonsters
-  check "empty monster detection gives a strange feeling"
+  check "empty monster detection gives a normal feeling"
     (hasMessage
-      "You have a strange feeling for a moment, then it passes."
+      "You have a normal feeling for a moment, then it passes."
       outNoMonsters)
   check "empty monster detection stays unidentified"
     (not (elem (Potion PotionDetectMonsters) outNoMonsters.game.knownKinds)
      && not (hasStatus DetectMonsters outNoMonsters.game.player))
 
-  let rat = MkMonster 1 Emu (MkCoord 6 5) 4 4 Awake []
+  let rat = MkMonster 1 Emu (MkCoord 70 15) 4 4 Asleep []
       gWithMonster = setMonster rat
                        (setItems [monsterPotion]
                          (addToPack [monsterPotion] base))
@@ -474,6 +484,13 @@ potionDetectionTests = do
   check "monster detection identifies itself when monsters are present"
     (hasMessage "You sense the presence of monsters." outMonsters
      && elem (Potion PotionDetectMonsters) outMonsters.game.knownKinds)
+  check "monster detection does not roll dice"
+    (outMonsters.game.rng == gWithMonster.rng)
+  check "monster detection lasts twenty turns"
+    (case find (\s => s.statusKind == DetectMonsters)
+               outMonsters.game.player.statuses of
+       Just s => s.remaining == 19
+       Nothing => False)
 
 wandTests : IO ()
 wandTests = do
