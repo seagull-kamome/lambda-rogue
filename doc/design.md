@@ -1,6 +1,6 @@
 # lambda-rogue 設計書
 
-- Status: Draft 1.48（M5 スライス 36 完了。モンスター感知の固定時間）
+- Status: Draft 1.49（M5 スライス 37 完了。杖の cancellation の忠実化）
 - Date: 2026-11-23
 - Target: Idris 2 0.8.0 / rc2 backend / termui 0.1.0 / rc2base 0.1.0
 - Reference: Rogue 5.4.4 (Berkeley Rogue) を第一候補とする
@@ -1869,6 +1869,18 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 - [x] `M4Test` に乱数非消費、20 ターン、幻覚中の strange feeling の
   3 チェックを追加し、全体は 1131 チェックになった。
 
+#### M5 スライス 37: 杖の cancellation の忠実化（完了）
+
+- [x] モンスターに永続的な `Cancelled` 状態を追加した。`tickMonsterStatuses`
+  はこの状態を減らさない。セーブの状態一覧にも含める。
+- [x] `Cancelled` のモンスターは、凍結・ホールド・ドレイン・錆・金品の
+  窃盗などの特殊攻撃を行わない。ドラゴンの火炎放射も止まる。
+- [x] 透明は解除され、`monsterHidden` が `Cancelled` を考慮する。
+  xeroc の擬態は解除する。既存の状態異常と行動状態は残す。
+- [x] `M4Test` に cancellation の状態保持、擬態解除、炎なし、凍結なしの
+  6 チェック、`MapViewTest` に透明解除の 2 チェックを追加し、全体は
+  1139 チェックになった。
+
 ## 10. リスクと未決事項
 
 ### 10.1 リスク
@@ -2014,3 +2026,4 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 | D79 | 2026-11-22 | 火の杖のビームがドラゴンに当たった場合、`6d6` を振らずに反射メッセージだけを出し、ビームをドラゴンの位置で止める。 | 原本 `fire_bolt()` は命中判定後、`name == "flame"` かつドラゴンなら `hit_monster()` を呼ばずに「the flame bounces off the dragon」と表示し、`used = TRUE` でビームを終了する。ダメージロールは `hit_monster()` の中で行われるため、反射時は乱数を消費しない。 |
 | D80 | 2026-11-22 | 魔法感知は乱数を振らず、同階の床とモンスター所持品の魔法物品を対象にする。`DetectMagic` は 1 行動分だけ付け、所持品はモンスター位置に `$` で表示する。床の物品は探索済みマスへの記録を残す。 | 原本 `P_TFIND` は `lvl_obj` と全モンスターの `t_pack` を走査し、`is_magic()` の物品位置に `$` を上書きして `--More--` で見せる。乱数は消費しない。即時表示をそのまま再現すると UI の再描画モデルに合わないため、1 行動分の状態で近似し、床の記憶は既存の使い勝手を保つ。 |
 | D81 | 2026-11-23 | モンスター感知は固定 20 ターンとし、乱数を消費しない。対象がないときは通常 normal feeling、幻覚中のみ strange feeling を出す。 | 原本は `HUHDURATION`（20）をそのまま `do_pot(P_DETMON, TRUE)` に渡し、`spread()` を使わない。対象なしの分岐は `msg(..., choose_str("normal", "strange"))` で、`choose_str` は幻覚中に第 1 引数を返す。lambda-rogue の `spread(20)` と常時 strange はどちらも原本と異なっていた。 |
+| D82 | 2026-11-23 | 杖の cancellation は対象に永続の `Cancelled` 状態を付け、特殊攻撃・火炎放射・透明・擬態を無効化する。既存の状態異常と行動状態は残し、乱数は消費しない。 | 原本 `WS_CANCEL` は `ISCANC` を立て、`ISINVIS` と `CANHUH` を消し、`t_disguise` を元の種族に戻す。`ISCANC` は `fight.c` の特殊攻撃 switch とドラゴンの火炎判定を抑止する。一方、`ISCANC` は `ISHELD` や `ISSLOW` などを消さず、モンスターを起こしもしない。既存の「全状態を消して Chasing に戻す」実装は原本より強すぎた。 |

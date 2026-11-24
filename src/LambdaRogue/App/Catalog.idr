@@ -77,6 +77,7 @@ statusName Japanese Levitated = "浮遊"
 statusName Japanese ConfuseNext = "混乱付与"
 statusName Japanese Mimicking = "物体擬態"
 statusName Japanese Fainted = "気絶"
+statusName Japanese Cancelled = "無効化"
 
 public export
 hungerName : Language -> HungerState -> String

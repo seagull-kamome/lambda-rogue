@@ -329,6 +329,7 @@ data StatusKind
   | ConfuseNext
   | Mimicking
   | Fainted
+  | Cancelled
 
 public export
 Eq StatusKind where
@@ -351,6 +352,7 @@ Eq StatusKind where
   ConfuseNext == ConfuseNext = True
   Mimicking == Mimicking = True
   Fainted == Fainted = True
+  Cancelled == Cancelled = True
   _ == _ = False
 
 public export
@@ -374,6 +376,7 @@ Show StatusKind where
   show ConfuseNext = "confusing hands"
   show Mimicking = "mimicking an object"
   show Fainted = "fainted"
+  show Cancelled = "cancelled"
 
 public export
 record Status where

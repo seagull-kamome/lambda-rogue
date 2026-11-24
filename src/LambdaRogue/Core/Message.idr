@@ -275,6 +275,7 @@ statusExpiryEn Levitated = "You float gently back to the floor."
 statusExpiryEn ConfuseNext = "Your hands stop glowing."
 statusExpiryEn Mimicking = "Your disguise slips."
 statusExpiryEn Fainted = "You come to."
+statusExpiryEn Cancelled = "The monster recovers its abilities."
 
 leadArg : AttackLead -> String
 leadArg NoLead = "none"

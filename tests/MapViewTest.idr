@@ -96,6 +96,26 @@ run = do
     (case cellFor gRevealed monsterPos Floor of
        Just c => c.glyph == 'X'
        Nothing => False)
+
+  let phantom = MkMonster 14 Phantom monsterPos 10 10 Awake []
+      lvlPhantom : Level
+      lvlPhantom = { monsters := [phantom] } (currentLevel gRoom)
+      gPhantom : Game
+      gPhantom = updateCurrentLevel (const lvlPhantom) gRoom
+  check "an invisible monster is hidden"
+    (case cellFor gPhantom monsterPos Floor of
+       Just c => c.glyph == '.'
+       Nothing => False)
+  let phantomCancelled = { statuses := [MkStatus Cancelled 1] } phantom
+      lvlPhantomCancelled : Level
+      lvlPhantomCancelled =
+        { monsters := [phantomCancelled] } (currentLevel gRoom)
+      gPhantomCancelled : Game
+      gPhantomCancelled = updateCurrentLevel (const lvlPhantomCancelled) gRoom
+  check "a cancelled phantom is visible"
+    (case cellFor gPhantomCancelled monsterPos Floor of
+       Just c => c.glyph == 'P'
+       Nothing => False)
   check "remembered terrain is dimmed"
     (case cellFor gRoom (MkCoord 5 5) Floor of
        Just c => c.glyph == '.' && hasAttr Dim c.style

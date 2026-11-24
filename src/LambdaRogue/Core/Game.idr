@@ -416,7 +416,7 @@ tickMonsterStatuses m =
   where
     tickOne : Status -> Maybe Status
     tickOne s =
-      if s.statusKind == Mimicking
+      if s.statusKind == Mimicking || s.statusKind == Cancelled
          then Just s
          else if s.remaining > 1
                  then Just ({ remaining := s.remaining - 1 } s)
@@ -1613,9 +1613,14 @@ applyWand WandCancellation dir st =
     Nothing => say WarningMsg BeamFizzles st
     Just (_, m) =>
       let lvl = currentLevel st.game
+          statuses' : List Status
+          statuses' = MkStatus Cancelled 1
+                      :: filter (\s => s.statusKind /= Mimicking
+                                       && s.statusKind /= Cancelled)
+                                m.statuses
           lvl' : Level
           lvl' = updateMonster m.id
-                   (\mm => { statuses := [], state := Chasing } mm) lvl
+                   (\mm => { statuses := statuses' } mm) lvl
           g : Game
           g = updateCurrentLevel (const lvl') st.game
       in say ItemMsg (MonsterOrdinary m.kind)
@@ -1965,9 +1970,9 @@ stealItem m st =
 ||| future kinds with several abilities stay deterministic.
 monsterAbilityOnHit : Monster -> Step -> Step
 monsterAbilityOnHit m st =
-  if isJust st.game.over
-     then st
-     else if hasAbility Freeze m.kind
+  if isJust st.game.over then st
+  else if isCancelled m then st
+  else if hasAbility Freeze m.kind
              then say WarningMsg
                     (MonsterFreezesYou m.kind)
                     (setPlayer (addStatus Held 3 st.game.player) st)
@@ -2226,7 +2231,8 @@ rangedOrChase : Monster -> Step -> Step
 rangedOrChase m st =
   if monsterHasStatus Confused m
      then randomMove m st
-     else if hasAbility FireBreath m.kind && canRanged m st.game
+     else if hasAbility FireBreath m.kind && not (isCancelled m)
+             && canRanged m st.game
              then let (fires, rng') = chance 20 st.game.rng
                       g : Game
                       g = { rng := rng' } st.game

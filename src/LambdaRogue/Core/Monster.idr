@@ -185,6 +185,12 @@ public export
 isMimicking : Monster -> Bool
 isMimicking m = any (\s => s.statusKind == Mimicking) m.statuses
 
+||| True once a wand of cancellation has stripped the monster's special
+||| abilities.  The status persists for the rest of the game.
+public export
+isCancelled : Monster -> Bool
+isCancelled m = any (\s => s.statusKind == Cancelled) m.statuses
+
 ||| The objects a xeroc can resemble.  Each class contributes its classic
 ||| glyph, so the disguise is visually indistinguishable from floor loot.
 public export

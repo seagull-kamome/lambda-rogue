@@ -616,9 +616,24 @@ wandTests = do
       outCancel = step (Zap 413 E)
                     (setMonster cancelled
                       (addToPack [wand 413 WandCancellation 5] base))
-  check "cancellation clears monster statuses"
+  check "cancellation marks the monster"
     (case monsterById 1 outCancel.game of
-       Just m => null m.statuses && m.state == Chasing
+       Just m => isCancelled m && not (isMimicking m)
+       Nothing => False)
+  check "cancellation keeps other statuses and the monster state"
+    (case monsterById 1 outCancel.game of
+       Just m => m.state == Fleeing
+                 && any (\s => s.statusKind == Held) m.statuses
+       Nothing => False)
+
+  let mimic = MkMonster 2 Xeroc (MkCoord 6 5) 10 10 Asleep
+                       [MkStatus Mimicking 1]
+      outMimicCancel = step (Zap 415 E)
+                         (setMonster mimic
+                           (addToPack [wand 415 WandCancellation 5] base))
+  check "cancellation drops a xeroc disguise"
+    (case monsterById 2 outMimicCancel.game of
+       Just m => isCancelled m && not (isMimicking m)
        Nothing => False)
 
   let outPoly = step (Zap 414 E)
@@ -941,6 +956,34 @@ monsterAbilityTests = do
         | k <- [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] ]
   check "a dragon sometimes breathes fire at range"
     (any (hasMessageContaining "breathes fire") breathOutcomes)
+
+  let cancelledDragon = { statuses := [MkStatus Cancelled 1] } dragon
+      cancelledDragonOutcomes : List Outcome
+      cancelledDragonOutcomes =
+        [ step Wait ({ rng := fromSeed k }
+                      (vulnerablePlayer (setMonster cancelledDragon base)))
+        | k <- [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] ]
+  check "a cancelled dragon cannot breathe fire"
+    (not (any (hasMessageContaining "breathes fire")
+              cancelledDragonOutcomes))
+  check "a cancelled dragon leaves the player unharmed at range"
+    (all (\o => o.game.player.hp == 100) cancelledDragonOutcomes)
+
+  let ice = MkMonster 24 IceMonster (MkCoord 5 5) 10 10 Chasing []
+      iceOutcomes : Bool -> List Outcome
+      iceOutcomes cancelled =
+        [ step Wait ({ rng := fromSeed k }
+                      (vulnerablePlayer
+                        (setMonster
+                          (if cancelled
+                              then { statuses := [MkStatus Cancelled 1] } ice
+                              else ice)
+                          base)))
+        | k <- [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] ]
+  check "an ice monster sometimes freezes the player"
+    (any (\o => hasStatus Held o.game.player) (iceOutcomes False))
+  check "a cancelled ice monster cannot freeze the player"
+    (not (any (\o => hasStatus Held o.game.player) (iceOutcomes True)))
 
   let outFlytrap = step Wait
         (setMonster (MkMonster 22 VenusFlytrap (MkCoord 10 5)

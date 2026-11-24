@@ -176,6 +176,7 @@ mimicDisplayName g m = itemDisplayNameIn g (mimicItem m)
 monsterHidden : Game -> Monster -> Bool
 monsterHidden g m =
   hasAbility Invisible m.kind
+  && not (isCancelled m)
   && not (playerSeesInvisible g)
   && not (adjacent m.pos g.player.pos)
 
