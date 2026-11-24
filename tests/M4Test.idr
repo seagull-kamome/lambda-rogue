@@ -284,12 +284,30 @@ scrollTests = do
     (maybe False walkable (tileAt (currentLevel outTel.game).tiles
                               outTel.game.player.pos))
 
-  -- Food detection grants the status.
-  let outFood = step (Read 311)
-                 (addToPack [scroll 311 ScrollFoodDetection] base)
-  check "food detection grants the status"
-    (hasStatus DetectFood outFood.game.player
-     && statusTurns DetectFood outFood.game.player > 0)
+  -- Food detection is instant and only identifies itself when it finds food.
+  let foodScroll = scroll 311 ScrollFoodDetection
+      foodAt = floorItem 320 (Food FoodRation) (MkCoord 60 15) 0 False
+      gFood0 = setItems [foodScroll, foodAt]
+                 (addToPack [foodScroll] base)
+      outFood = step (Read 311) gFood0
+  check "food detection rolls no dice"
+    (outFood.game.rng == gFood0.rng)
+  check "food detection adds a one-action status"
+    (statusTurns DetectFood outFood.game.player == 1)
+  check "food detection identifies itself when food is present"
+    (elem (Scroll ScrollFoodDetection) outFood.game.knownKinds)
+  check "food detection marks the food cell explored"
+    (getBit 60 15 (currentLevel outFood.game).explored)
+
+  let gNoFood0 = addToPack [scroll 321 ScrollFoodDetection]
+                   (setItems [] base)
+      outNoFood = step (Read 321) gNoFood0
+  check "empty food detection only tingles"
+    (hasMessage "Your nose tingles." outNoFood)
+  check "empty food detection stays unidentified"
+    (not (elem (Scroll ScrollFoodDetection) outNoFood.game.knownKinds))
+  check "empty food detection adds no status"
+    (not (hasStatus DetectFood outNoFood.game.player))
 
   -- Remove curse clears the worn armor's curse.
   let cursedArmor = armor 312 LeatherArmor 0 True

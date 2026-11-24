@@ -1369,6 +1369,22 @@ identifyMessage what (g, found) st =
       ({ game := g } st)
     Nothing => say WarningMsg (NoUnidentified what) st
 
+||| Floor food on the current level.  The original food-detection scroll
+||| scans `lvl_obj` only; monster packs are not included.
+floorFoodCells : Game -> List Coord
+floorFoodCells g =
+  mapMaybe (\i => case (i.location, i.kind) of
+                    (OnFloor d c, Food _) =>
+                      if d == g.depth then Just c else Nothing
+                    _ => Nothing)
+           g.items
+
+revealCells : List Coord -> Game -> Game
+revealCells cells g =
+  updateCurrentLevel
+    (\l => { explored :=
+               foldl (\bs, c => setBit c.x c.y bs) l.explored cells } l) g
+
 applyScroll : ScrollKind -> Step -> Step
 applyScroll ScrollConfuseMonster st =
   let p : Player
@@ -1428,9 +1444,15 @@ applyScroll ScrollScareMonster st =
             st.game
   in say ItemMsg MonstersFlee ({ game := g } st)
 applyScroll ScrollFoodDetection st =
-  let p : Player
-      p = addStatus DetectFood 30 st.game.player
-  in say ItemMsg SenseFood ({ game := { player := p } st.game } st)
+  let g0 = st.game
+      cells = floorFoodCells g0
+  in if null cells
+        then say ItemMsg NoseTingles st
+        else let p' = addStatus DetectFood 2 g0.player
+                 g : Game
+                 g = addKnown (Scroll ScrollFoodDetection)
+                       (revealCells cells ({ player := p' } g0))
+             in say ItemMsg SenseFood ({ game := g } st)
 applyScroll ScrollTeleportation st =
   teleportPlayer (say ItemMsg (Teleported st.game.player.pos) st)
 applyScroll ScrollEnchantWeapon st =
@@ -1489,7 +1511,10 @@ read iid st =
       case it.kind of
         Scroll k =>
           let shown = itemDisplayNameIn st.game it
-              g1 = addKnown (Scroll k) (removePackItem iid st.game)
+              g0 = removePackItem iid st.game
+              g1 = if k == ScrollFoodDetection
+                      then g0
+                      else addKnown (Scroll k) g0
               st1 = say ItemMsg (ReadScroll shown)
                             ({ game := g1 } st)
           in consume (applyScroll k st1)

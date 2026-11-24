@@ -137,6 +137,7 @@ data Msg
   | MonstersSleep
   | MonstersFlee
   | SenseFood
+  | NoseTingles
   | NotWearingArmor
   | ArmorGlowsSilver String
   | NotWieldingWeapon
@@ -416,7 +417,8 @@ msgEn MapForms = "A map of the level forms in your mind."
 msgEn MonstersFreeze = "The monsters freeze in place."
 msgEn MonstersSleep = "The monsters fall asleep."
 msgEn MonstersFlee = "The monsters turn to flee."
-msgEn SenseFood = "You sense food nearby."
+msgEn SenseFood = "Your nose tingles and you smell food."
+msgEn NoseTingles = "Your nose tingles."
 msgEn NotWearingArmor = "You are not wearing armor."
 msgEn (ArmorGlowsSilver name) = "Your " ++ name ++ " glows silver."
 msgEn NotWieldingWeapon = "You are not wielding a weapon."
@@ -612,6 +614,7 @@ msgKey MonstersFreeze = "monsters-freeze"
 msgKey MonstersSleep = "monsters-sleep"
 msgKey MonstersFlee = "monsters-flee"
 msgKey SenseFood = "sense-food"
+msgKey NoseTingles = "nose-tingles"
 msgKey NotWearingArmor = "not-wearing-armor"
 msgKey (ArmorGlowsSilver _) = "armor-glows-silver"
 msgKey NotWieldingWeapon = "not-wielding-weapon"
@@ -787,6 +790,7 @@ msgArgs MonstersFreeze = []
 msgArgs MonstersSleep = []
 msgArgs MonstersFlee = []
 msgArgs SenseFood = []
+msgArgs NoseTingles = []
 msgArgs NotWearingArmor = []
 msgArgs (ArmorGlowsSilver name) = [name]
 msgArgs NotWieldingWeapon = []
@@ -974,6 +978,7 @@ sampleMessages =
   , MonstersSleep
   , MonstersFlee
   , SenseFood
+  , NoseTingles
   , NotWearingArmor
   , ArmorGlowsSilver "leather armor"
   , NotWieldingWeapon

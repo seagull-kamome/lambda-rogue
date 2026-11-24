@@ -1,7 +1,7 @@
 # lambda-rogue 設計書
 
-- Status: Draft 1.49（M5 スライス 37 完了。杖の cancellation の忠実化）
-- Date: 2026-11-23
+- Status: Draft 1.50（M5 スライス 38 完了。食料感知の即時化）
+- Date: 2026-11-24
 - Target: Idris 2 0.8.0 / rc2 backend / termui 0.1.0 / rc2base 0.1.0
 - Reference: Rogue 5.4.4 (Berkeley Rogue) を第一候補とする
 - 関連: `doc/core-api.md`, `doc/rogue-reference.md`, `doc/persistence.md`
@@ -1881,6 +1881,17 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
   6 チェック、`MapViewTest` に透明解除の 2 チェックを追加し、全体は
   1139 チェックになった。
 
+#### M5 スライス 38: 食料感知の即時化（完了）
+
+- [x] `ScrollFoodDetection` の 30 ターン固定をやめ、乱数を振らずに
+  1 行動分の `DetectFood` を付けるようにした。
+- [x] 対象は同階の床の食料だけとし、食料のマスを探索済みにする。
+  モンスターの所持品は対象外（原本 `S_FDET` と同じ）。
+- [x] 食料があるときだけ巻物を識別し「Your nose tingles and you smell
+  food.」を出す。ないときは「Your nose tingles.」だけで未識別のまま。
+- [x] `M4Test` の食料感知テストを更新し、乱数非消費、1 行動、識別、
+  探索済み、対象なしの 6 チェックを追加して全体は 1145 チェックになった。
+
 ## 10. リスクと未決事項
 
 ### 10.1 リスク
@@ -2027,3 +2038,4 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 | D80 | 2026-11-22 | 魔法感知は乱数を振らず、同階の床とモンスター所持品の魔法物品を対象にする。`DetectMagic` は 1 行動分だけ付け、所持品はモンスター位置に `$` で表示する。床の物品は探索済みマスへの記録を残す。 | 原本 `P_TFIND` は `lvl_obj` と全モンスターの `t_pack` を走査し、`is_magic()` の物品位置に `$` を上書きして `--More--` で見せる。乱数は消費しない。即時表示をそのまま再現すると UI の再描画モデルに合わないため、1 行動分の状態で近似し、床の記憶は既存の使い勝手を保つ。 |
 | D81 | 2026-11-23 | モンスター感知は固定 20 ターンとし、乱数を消費しない。対象がないときは通常 normal feeling、幻覚中のみ strange feeling を出す。 | 原本は `HUHDURATION`（20）をそのまま `do_pot(P_DETMON, TRUE)` に渡し、`spread()` を使わない。対象なしの分岐は `msg(..., choose_str("normal", "strange"))` で、`choose_str` は幻覚中に第 1 引数を返す。lambda-rogue の `spread(20)` と常時 strange はどちらも原本と異なっていた。 |
 | D82 | 2026-11-23 | 杖の cancellation は対象に永続の `Cancelled` 状態を付け、特殊攻撃・火炎放射・透明・擬態を無効化する。既存の状態異常と行動状態は残し、乱数は消費しない。 | 原本 `WS_CANCEL` は `ISCANC` を立て、`ISINVIS` と `CANHUH` を消し、`t_disguise` を元の種族に戻す。`ISCANC` は `fight.c` の特殊攻撃 switch とドラゴンの火炎判定を抑止する。一方、`ISCANC` は `ISHELD` や `ISSLOW` などを消さず、モンスターを起こしもしない。既存の「全状態を消して Chasing に戻す」実装は原本より強すぎた。 |
+| D83 | 2026-11-24 | 食料感知の巻物は乱数を振らず、同階の床の食料だけを対象に 1 行動分の `DetectFood` を付ける。食料のマスは探索済みにし、食料があるときだけ巻物を識別する。 | 原本 `S_FDET` は `lvl_obj` の食料だけを走査し、見つかったときだけ `oi_know` を立てて「Your nose tingles and you smell food.--More--」を出す。見つからなければ「your nose tingles」だけで識別しない。従来の 30 ターン固定と常時識別は原本と異なっていた。 |
