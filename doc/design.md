@@ -1,6 +1,6 @@
 # lambda-rogue 設計書
 
-- Status: Draft 1.50（M5 スライス 38 完了。食料感知の即時化）
+- Status: Draft 1.51（M5 スライス 39 完了。ビーム杖の魔法セーヴ）
 - Date: 2026-11-24
 - Target: Idris 2 0.8.0 / rc2 backend / termui 0.1.0 / rc2base 0.1.0
 - Reference: Rogue 5.4.4 (Berkeley Rogue) を第一候補とする
@@ -1892,6 +1892,20 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 - [x] `M4Test` の食料感知テストを更新し、乱数非消費、1 行動、識別、
   探索済み、対象なしの 6 チェックを追加して全体は 1145 チェックになった。
 
+#### M5 スライス 39: ビーム杖の魔法セーヴ（完了）
+
+- [x] `Combat.monsterMagicSave` を追加した。`need = 17 - レベル / 2`
+  に対し `roll(1, 20) >= need` で成功し、常に d20 を 1 回だけ振る。
+- [x] `lightning` / `fire` / `cold` / `magic missile` は、ダメージを
+  振る前に対象のセーヴを行う。成功時はダメージを振らず、ビームは
+  かすめて通過する。`lightning` / `fire` / `cold` は対象を追跡状態にし、
+  ホールドを解く。`magic missile` は煙とともに消える。
+- [x] ドラゴンの火炎反射はセーヴ失敗時だけにした。成功時は
+  「The flame whizzes past the dragon.」でダメージなし。
+- [x] `M4Test` にセーヴ成功・失敗の決定論的シードと 7 チェック、
+  `M5Test` の magic missile ダメージ検査をセーヴ失敗シードに更新し、
+  全体は 1152 チェックになった。
+
 ## 10. リスクと未決事項
 
 ### 10.1 リスク
@@ -2039,3 +2053,4 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 | D81 | 2026-11-23 | モンスター感知は固定 20 ターンとし、乱数を消費しない。対象がないときは通常 normal feeling、幻覚中のみ strange feeling を出す。 | 原本は `HUHDURATION`（20）をそのまま `do_pot(P_DETMON, TRUE)` に渡し、`spread()` を使わない。対象なしの分岐は `msg(..., choose_str("normal", "strange"))` で、`choose_str` は幻覚中に第 1 引数を返す。lambda-rogue の `spread(20)` と常時 strange はどちらも原本と異なっていた。 |
 | D82 | 2026-11-23 | 杖の cancellation は対象に永続の `Cancelled` 状態を付け、特殊攻撃・火炎放射・透明・擬態を無効化する。既存の状態異常と行動状態は残し、乱数は消費しない。 | 原本 `WS_CANCEL` は `ISCANC` を立て、`ISINVIS` と `CANHUH` を消し、`t_disguise` を元の種族に戻す。`ISCANC` は `fight.c` の特殊攻撃 switch とドラゴンの火炎判定を抑止する。一方、`ISCANC` は `ISHELD` や `ISSLOW` などを消さず、モンスターを起こしもしない。既存の「全状態を消して Chasing に戻す」実装は原本より強すぎた。 |
 | D83 | 2026-11-24 | 食料感知の巻物は乱数を振らず、同階の床の食料だけを対象に 1 行動分の `DetectFood` を付ける。食料のマスは探索済みにし、食料があるときだけ巻物を識別する。 | 原本 `S_FDET` は `lvl_obj` の食料だけを走査し、見つかったときだけ `oi_know` を立てて「Your nose tingles and you smell food.--More--」を出す。見つからなければ「your nose tingles」だけで識別しない。従来の 30 ターン固定と常時識別は原本と異なっていた。 |
+| D84 | 2026-11-24 | ビーム杖（lightning / fire / cold / magic missile）はダメージ判定の前に対象の魔法セーヴを 1 回振り、成功時はダメージを振らない。lightning / fire / cold は対象を追跡状態にしてホールドを解き、magic missile は消える。ドラゴンの火炎反射はセーヴ失敗時だけに限る。 | 原本 `fire_bolt` は `save_throw(VS_MAGIC, tp)` を先に評価し、成功時は `hit_monster` を呼ばず「the <bolt|flame|ice> whizzes past the <monster>」を出す。`WS_MISSILE` も `do_motion` の後に同じセーヴを行い、成功時は「the missle vanishes with a puff of smoke」を出す。ドラゴンの反射判定はセーヴ失敗側の分岐にあるため、セーヴ成功時は反射しない。`runto` はセーヴされた対象を追跡状態にし、`ISHELD` を消す。 |

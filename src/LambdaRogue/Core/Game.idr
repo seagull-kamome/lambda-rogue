@@ -1520,15 +1520,43 @@ read iid st =
           in consume (applyScroll k st1)
         _ => say WarningMsg CannotRead st
 
-zapDamage : Int32 -> Int32 -> AttackLead -> Dir -> Step -> Step
-zapDamage n sides lead dir st =
+||| Wake a monster hit by a beam that failed to hurt it.  The original
+||| `runto` sets `ISRUN` and clears `ISHELD`, sending the target after the
+||| player.
+wakeByBeam : MonsterId -> Game -> Game
+wakeByBeam i g =
+  let lvl = currentLevel g
+      lvl' : Level
+      lvl' = updateMonster i
+               (\m => { state := Chasing
+                      , statuses := filter (\s => s.statusKind /= Held)
+                                            m.statuses } m) lvl
+  in updateCurrentLevel (const lvl') g
+
+||| A beam wand gives its target a magic saving throw before any damage is
+||| rolled.  On a successful save the beam passes by; lightning, fire and
+||| cold leave the monster running, while a magic missile simply vanishes.
+||| On a failed save a dragon reflects a flame without taking damage.
+beamDamage : (MonsterKind -> Msg) -> Bool -> Bool -> Int32 -> Int32
+           -> AttackLead -> Dir -> Step -> Step
+beamDamage savedMsg wakes reflects n sides lead dir st =
   case beamTarget st.game dir of
     Nothing => say WarningMsg BeamFizzles st
     Just (_, m) =>
-      let (dmg, rng') = roll n sides st.game.rng
-          g : Game
-          g = { rng := rng' } st.game
-      in damageMonster m dmg lead ({ game := g } st)
+      let (saved, rng1) = monsterMagicSave m st.game.rng
+          g1 : Game
+          g1 = { rng := rng1 } st.game
+      in if saved
+            then let g2 : Game
+                     g2 = if wakes then wakeByBeam m.id g1 else g1
+                 in say ItemMsg (savedMsg m.kind) ({ game := g2 } st)
+            else if reflects && m.kind == Dragon
+                    then say ItemMsg FlameBouncesOffDragon
+                           ({ game := g1 } st)
+                    else let (dmg, rng2) = roll n sides rng1
+                             g : Game
+                             g = { rng := rng2 } g1
+                         in damageMonster m dmg lead ({ game := g } st)
 
 ||| The original drain life spreads damage among every monster in the
 ||| player's room.  In a corridor it reaches only adjacent monsters; the
@@ -1550,18 +1578,14 @@ applyWand WandInvisibility dir st =
       p = addStatus Invisible 20 st.game.player
   in say ItemMsg FadeOutOfSight ({ game := { player := p } st.game } st)
 applyWand WandLightning dir st =
-  zapDamage 6 6 WandLightning dir st
+  beamDamage BoltWhizzesPast True False 6 6 WandLightning dir st
 applyWand WandFire dir st =
-  case beamTarget st.game dir of
-    Nothing => say WarningMsg BeamFizzles st
-    Just (_, m) =>
-      if m.kind == Dragon
-         then say ItemMsg FlameBouncesOffDragon st
-         else zapDamage 6 6 WandFire dir st
+  beamDamage FlameWhizzesPast True True 6 6 WandFire dir st
 applyWand WandCold dir st =
-  zapDamage 6 6 WandCold dir st
+  beamDamage IceWhizzesPast True False 6 6 WandCold dir st
 applyWand WandMagicMissile dir st =
-  zapDamage 1 4 WandMagicMissile dir st
+  beamDamage (const MagicMissileVanishes) False False 1 4
+             WandMagicMissile dir st
 applyWand WandPolymorph dir st =
   case beamTarget st.game dir of
     Nothing => say WarningMsg BeamFizzles st

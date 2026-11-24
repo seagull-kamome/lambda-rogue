@@ -51,6 +51,18 @@ public export
 playerArmorClass : Player -> Int32
 playerArmorClass p = p.armor - p.ringArmor
 
+||| The original `save_throw(VS_MAGIC, monster)`: `need = 14 + 3 -
+||| level/2` (integer division), and the save succeeds when a `roll(1, 20)`
+||| is at least `need`.  Monster level is the kind's base level; the
+||| original only adds depth beyond the amulet level, which this engine
+||| does not model.  Every save draws exactly one d20.
+public export
+monsterMagicSave : Monster -> Rng -> (Bool, Rng)
+monsterMagicSave m g =
+  let need = 17 - ((monsterSpec m.kind).level `div` 2)
+      (r, g') = roll 1 20 g
+  in (r >= need, g')
+
 ||| The original `swing()`: draw `rnd(20)` (0–19) and compare
 ||| `res + wplus` with `(20 - at_lvl) - op_arm`.  Used by arrow and dart
 ||| traps, which pass the player's level and armor class.

@@ -5,6 +5,7 @@ module M5Test
 import Data.List
 import Data.Maybe
 import LambdaRogue.Core.Bitset
+import LambdaRogue.Core.Combat
 import LambdaRogue.Core.Dungeon
 import LambdaRogue.Core.Game
 import LambdaRogue.Core.Geometry
@@ -58,6 +59,14 @@ setMonster m g =
   let lvl : Level
       lvl = { monsters := [m] } (currentLevel g)
   in updateCurrentLevel (const lvl) g
+
+||| The first seed whose magic saving throw fails for the given kind.
+failedMagicSaveSeed : MonsterKind -> Bits64 -> Bits64
+failedMagicSaveSeed k s =
+  let m = MkMonster 1 k (MkCoord 6 5) 100 100 Awake []
+  in if fst (monsterMagicSave m (fromSeed s))
+        then failedMagicSaveSeed k (s + 1)
+        else s
 
 setItems : List Item -> Game -> Game
 setItems xs g = { items := xs } g
@@ -226,7 +235,8 @@ potionTests = do
 wandTests : IO ()
 wandTests = do
   let target = MkMonster 1 Emu (MkCoord 6 5) 100 100 Awake []
-      g = setMonster target (addToPack [wand 504 WandMagicMissile 5] base)
+      g = { rng := fromSeed (failedMagicSaveSeed Emu 0) }
+            (setMonster target (addToPack [wand 504 WandMagicMissile 5] base))
       out = step (Zap 504 E) g
   check "magic missile deals 1d4 damage"
     (case find (\m => m.id == 1) (currentLevel out.game).monsters of

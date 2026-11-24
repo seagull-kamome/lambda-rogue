@@ -74,6 +74,25 @@ dartPoisonsSeed = 0
 dartSavedSeed : Bits64
 dartSavedSeed = 8
 
+||| A monster used by the beam-wand tests.
+beamTestMonster : MonsterKind -> Monster
+beamTestMonster k = MkMonster 1 k (MkCoord 6 5) 100 100 Awake []
+
+||| Find the first seed whose magic saving throw fails (or succeeds) for
+||| the given kind.  The beam tests pin the outcome this way instead of
+||| assuming every bolt connects.
+failedMagicSaveSeed : MonsterKind -> Bits64 -> Bits64
+failedMagicSaveSeed k s =
+  if fst (monsterMagicSave (beamTestMonster k) (fromSeed s))
+     then failedMagicSaveSeed k (s + 1)
+     else s
+
+successfulMagicSaveSeed : MonsterKind -> Bits64 -> Bits64
+successfulMagicSaveSeed k s =
+  if fst (monsterMagicSave (beamTestMonster k) (fromSeed s))
+     then s
+     else successfulMagicSaveSeed k (s + 1)
+
 setMonster : Monster -> Game -> Game
 setMonster m g =
   let lvl0 = currentLevel g
@@ -527,7 +546,8 @@ wandTests = do
 
   let damageWand : WandKind -> ItemId -> String -> IO ()
       damageWand k iid label = do
-        let g = setMonster bigRat (addToPack [wand iid k 5] base)
+        let g = { rng := fromSeed (failedMagicSaveSeed Emu 0) }
+                  (setMonster bigRat (addToPack [wand iid k 5] base))
             out = step (Zap iid E) g
         check label
           (case monsterById 1 out.game of
@@ -540,15 +560,50 @@ wandTests = do
   damageWand WandMagicMissile 404 "magic missile damages a monster"
 
   let dragonTarget = MkMonster 1 Dragon (MkCoord 6 5) 100 100 Awake []
-      outReflect = step (Zap 414 E)
-                     (setMonster dragonTarget
-                       (addToPack [wand 414 WandFire 5] base))
+      gReflect = { rng := fromSeed (failedMagicSaveSeed Dragon 0) }
+                   (setMonster dragonTarget
+                     (addToPack [wand 414 WandFire 5] base))
+      outReflect = step (Zap 414 E) gReflect
   check "fire bounces off a dragon"
     (hasMessage "The flame bounces off the dragon." outReflect)
   check "a reflected flame does not damage the dragon"
     (case monsterById 1 outReflect.game of
        Just m => m.hp == 100
        Nothing => False)
+
+  let gDragonSave = { rng := fromSeed (successfulMagicSaveSeed Dragon 0) }
+                      (setMonster dragonTarget
+                        (addToPack [wand 415 WandFire 5] base))
+      outDragonSave = step (Zap 415 E) gDragonSave
+  check "a dragon that saves lets the flame pass"
+    (hasMessage "The flame whizzes past the dragon." outDragonSave)
+  check "a saved flame does not damage the dragon"
+    (case monsterById 1 outDragonSave.game of
+       Just m => m.hp == 100
+       Nothing => False)
+
+  let gSavedBolt = { rng := fromSeed (successfulMagicSaveSeed Emu 0) }
+                     (setMonster bigRat
+                       (addToPack [wand 416 WandLightning 5] base))
+      outSavedBolt = step (Zap 416 E) gSavedBolt
+  check "a monster that saves takes no lightning damage"
+    (hasMessage "The bolt whizzes past the emu." outSavedBolt
+     && maybe False (\m => m.hp == 100) (monsterById 1 outSavedBolt.game))
+  check "a saved beam leaves the monster chasing"
+    (maybe False (\m => m.state == Chasing) (monsterById 1 outSavedBolt.game))
+  check "a saved beam consumes exactly one saving throw"
+    (sameState outSavedBolt.game.rng
+      (snd (monsterMagicSave bigRat
+             (fromSeed (successfulMagicSaveSeed Emu 0)))))
+
+  let gSavedMissile = { rng := fromSeed (successfulMagicSaveSeed Emu 0) }
+                        (setMonster bigRat
+                          (addToPack [wand 417 WandMagicMissile 5] base))
+      outSavedMissile = step (Zap 417 E) gSavedMissile
+  check "a saved magic missile vanishes"
+    (hasMessage "The missile vanishes with a puff of smoke." outSavedMissile)
+  check "a saved magic missile does not damage the monster"
+    (maybe False (\m => m.hp == 100) (monsterById 1 outSavedMissile.game))
 
   let outInvis = step (Zap 405 E)
                    (addToPack [wand 405 WandInvisibility 5] base)

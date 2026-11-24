@@ -150,6 +150,10 @@ data Msg
   | BeamFizzles
   | WandFloodsLight
   | FadeOutOfSight
+  | BoltWhizzesPast MonsterKind
+  | FlameWhizzesPast MonsterKind
+  | IceWhizzesPast MonsterKind
+  | MagicMissileVanishes
   | MonsterPolymorphs MonsterKind MonsterKind
   | MonsterSpeedsUp MonsterKind
   | MonsterSlowsDown MonsterKind
@@ -431,6 +435,13 @@ msgEn (ReadScroll name) = "You read the " ++ name ++ "."
 msgEn BeamFizzles = "The beam fizzles."
 msgEn WandFloodsLight = "The wand floods the room with light."
 msgEn FadeOutOfSight = "You fade out of sight."
+msgEn (BoltWhizzesPast kind) =
+  "The bolt whizzes past the " ++ monsterName kind ++ "."
+msgEn (FlameWhizzesPast kind) =
+  "The flame whizzes past the " ++ monsterName kind ++ "."
+msgEn (IceWhizzesPast kind) =
+  "The ice whizzes past the " ++ monsterName kind ++ "."
+msgEn MagicMissileVanishes = "The missile vanishes with a puff of smoke."
 msgEn (MonsterPolymorphs old new) =
   "The " ++ monsterName old ++ " becomes a " ++ monsterName new ++ "!"
 msgEn (MonsterSpeedsUp kind) = "The " ++ monsterName kind ++ " speeds up!"
@@ -627,6 +638,10 @@ msgKey (ReadScroll _) = "read-scroll"
 msgKey BeamFizzles = "beam-fizzles"
 msgKey WandFloodsLight = "wand-floods-light"
 msgKey FadeOutOfSight = "fade-out-of-sight"
+msgKey (BoltWhizzesPast _) = "bolt-whizzes-past"
+msgKey (FlameWhizzesPast _) = "flame-whizzes-past"
+msgKey (IceWhizzesPast _) = "ice-whizzes-past"
+msgKey MagicMissileVanishes = "magic-missile-vanishes"
 msgKey (MonsterPolymorphs _ _) = "monster-polymorphs"
 msgKey (MonsterSpeedsUp _) = "monster-speeds-up"
 msgKey (MonsterSlowsDown _) = "monster-slows-down"
@@ -803,6 +818,10 @@ msgArgs (ReadScroll name) = [name]
 msgArgs BeamFizzles = []
 msgArgs WandFloodsLight = []
 msgArgs FadeOutOfSight = []
+msgArgs (BoltWhizzesPast kind) = [monsterName kind]
+msgArgs (FlameWhizzesPast kind) = [monsterName kind]
+msgArgs (IceWhizzesPast kind) = [monsterName kind]
+msgArgs MagicMissileVanishes = []
 msgArgs (MonsterPolymorphs old new) = [monsterName old, monsterName new]
 msgArgs (MonsterSpeedsUp kind) = [monsterName kind]
 msgArgs (MonsterSlowsDown kind) = [monsterName kind]
@@ -991,6 +1010,10 @@ sampleMessages =
   , BeamFizzles
   , WandFloodsLight
   , FadeOutOfSight
+  , BoltWhizzesPast Orc
+  , FlameWhizzesPast Orc
+  , IceWhizzesPast Orc
+  , MagicMissileVanishes
   , MonsterPolymorphs Orc Dragon
   , MonsterSpeedsUp Orc
   , MonsterSlowsDown Orc
