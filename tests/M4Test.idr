@@ -363,8 +363,31 @@ scrollTests = do
   -- Create monster adds a monster.
   let outCreate = step (Read 317)
                     (addToPack [scroll 317 ScrollCreateMonster] base)
+      created = case (currentLevel outCreate.game).monsters of
+                  [m] => Just m
+                  _ => Nothing
   check "create monster adds a monster"
     (length (currentLevel outCreate.game).monsters == 1)
+  check "create monster places the monster next to the player"
+    (maybe False (\m => chebyshev m.pos base.player.pos == 1) created)
+
+  let blockers =
+        [ MkMonster 11 Emu (MkCoord 3 4) 4 4 Asleep []
+        , MkMonster 12 Emu (MkCoord 4 4) 4 4 Asleep []
+        , MkMonster 13 Emu (MkCoord 5 4) 4 4 Asleep []
+        , MkMonster 14 Emu (MkCoord 3 5) 4 4 Asleep []
+        , MkMonster 15 Emu (MkCoord 5 5) 4 4 Asleep []
+        , MkMonster 16 Emu (MkCoord 3 6) 4 4 Asleep []
+        , MkMonster 17 Emu (MkCoord 4 6) 4 4 Asleep []
+        , MkMonster 18 Emu (MkCoord 5 6) 4 4 Asleep []
+        ]
+      gFull = setMonsters blockers
+                (addToPack [scroll 322 ScrollCreateMonster] base)
+      outFull = step (Read 322) gFull
+  check "create monster with no free neighbour cries faintly"
+    (hasMessage "You hear a faint cry of anguish in the distance." outFull)
+  check "a failed create monster adds no monster"
+    (length (currentLevel outFull.game).monsters == 8)
 
   -- Reading a scare-monster scroll only laughs; the scroll works when it
   -- is left on the floor.

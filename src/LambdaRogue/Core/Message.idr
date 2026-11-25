@@ -50,7 +50,7 @@ data Msg
   | MonsterResists
   | MonsterVanishes MonsterKind
   | MonsterAppears MonsterKind
-  | ScrollFizzles
+  | FaintCry
   | MissMonster MonsterKind
   | HitMonster MonsterKind Int32 Bool
   | KillMonsterPlain MonsterKind
@@ -325,7 +325,7 @@ msgEn (MonsterTakesDamage lead kind dmg) =
 msgEn MonsterResists = "The monster resists."
 msgEn (MonsterVanishes kind) = "The " ++ monsterName kind ++ " vanishes."
 msgEn (MonsterAppears kind) = "A " ++ monsterName kind ++ " appears!"
-msgEn ScrollFizzles = "The scroll fizzles."
+msgEn FaintCry = "You hear a faint cry of anguish in the distance."
 msgEn (MissMonster kind) = "You miss the " ++ monsterName kind ++ "."
 msgEn (HitMonster kind dmg confused) =
   "You hit the " ++ monsterName kind ++ " for " ++ show dmg ++ "."
@@ -538,7 +538,7 @@ msgKey (MonsterTakesDamage _ _ _) = "monster-takes-damage"
 msgKey MonsterResists = "monster-resists"
 msgKey (MonsterVanishes _) = "monster-vanishes"
 msgKey (MonsterAppears _) = "monster-appears"
-msgKey ScrollFizzles = "scroll-fizzles"
+msgKey FaintCry = "faint-cry"
 msgKey (MissMonster _) = "miss-monster"
 msgKey (HitMonster _ _ _) = "hit-monster"
 msgKey (KillMonsterPlain _) = "kill-monster-plain"
@@ -717,7 +717,7 @@ msgArgs (MonsterTakesDamage lead kind dmg) =
 msgArgs MonsterResists = []
 msgArgs (MonsterVanishes kind) = [monsterName kind]
 msgArgs (MonsterAppears kind) = [monsterName kind]
-msgArgs ScrollFizzles = []
+msgArgs FaintCry = []
 msgArgs (MissMonster kind) = [monsterName kind]
 msgArgs (HitMonster kind dmg confused) =
   [monsterName kind, show dmg, if confused then "yes" else "no"]
@@ -910,7 +910,7 @@ sampleMessages =
   , MonsterResists
   , MonsterVanishes Orc
   , MonsterAppears Orc
-  , ScrollFizzles
+  , FaintCry
   , MissMonster Orc
   , HitMonster Orc 4 True
   , KillMonsterPlain Orc

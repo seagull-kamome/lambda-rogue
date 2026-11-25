@@ -168,6 +168,12 @@ scareScrollAt g c =
   any (\i => i.kind == Scroll ScrollScareMonster
              && i.location == OnFloor g.depth c) g.items
 
+||| A monster may walk onto floor, corridors, stairs and closed doors.
+||| Opening a closed door is resolved in `chase`; secret and locked doors
+||| stay closed to monsters.
+monsterPassable : Tile -> Bool
+monsterPassable t = walkable t || t == Door Closed
+
 updateMonster : MonsterId -> (Monster -> Monster) -> Level -> Level
 updateMonster i f lvl =
   { monsters := map (\m => if m.id == i then f m else m) lvl.monsters } lvl
@@ -544,33 +550,56 @@ public export
 createMonsterCells : Game -> List Coord
 createMonsterCells g =
   let lvl = currentLevel g
-  in filter (\c => c /= g.player.pos
+      p = g.player.pos
+      around = [MkCoord (p.x + dx) (p.y + dy)
+               | dy <- [-1, 0, 1], dx <- [-1, 0, 1],
+                 not (dx == 0 && dy == 0)]
+  in filter (\c => inBounds c
+                   && (case tileAt lvl.tiles c of
+                         Just t => monsterPassable t
+                         Nothing => False)
                    && isNothing (monsterAt lvl c)
-                   && maybe False walkable (tileAt lvl.tiles c)
                    && not (scareScrollAt g c))
-            (allWalkableCells lvl.tiles)
+            around
+
+||| The original `S_CREATE` uses reservoir sampling over the eight
+||| neighbours: the i-th candidate replaces the current choice when
+||| `rnd(i)` is zero.  A cell with a scare-monster scroll never enters the
+||| list, so it consumes no roll.
+chooseCreateCell : List Coord -> Rng -> (Maybe Coord, Rng)
+chooseCreateCell cs g0 = go 1 Nothing cs g0
+  where
+    go : Int32 -> Maybe Coord -> List Coord -> Rng
+      -> (Maybe Coord, Rng)
+    go _ best [] g = (best, g)
+    go i best (c :: rest) g =
+      let (v, g') = uniform (cast i) g
+      in go (i + 1) (if v == 0 then Just c else best) rest g'
 
 createMonsterNear : Step -> Step
 createMonsterNear st =
   let g = st.game
       lvl = currentLevel g
-      cells = createMonsterCells g
-      (kindOpt, g1) = pick (spawnPool g.depth) g.rng
-      (coordOpt, g2) = pick cells g1
-  in case (kindOpt, coordOpt) of
-       (Just kind, Just c) =>
-         let spec = monsterSpec kind
-             (hp, g3) = rollMonsterHp spec g2
-             m : Monster
-             m = MkMonster g.nextMonsterId kind c hp hp Awake []
-             lvl' : Level
-             lvl' = { monsters := lvl.monsters ++ [m] } lvl
-             g' : Game
-             g' = { rng := g3, nextMonsterId := g.nextMonsterId + 1 }
-                    (updateCurrentLevel (const lvl') g)
-         in say SystemMsg (MonsterAppears kind)
-              ({ game := g' } st)
-       _ => say WarningMsg ScrollFizzles st
+      (coordOpt, g1) = chooseCreateCell (createMonsterCells g) g.rng
+  in case coordOpt of
+       Nothing => say WarningMsg FaintCry st
+       Just c =>
+         let (kindOpt, g2) = pick (spawnPool g.depth) g1
+         in case kindOpt of
+              Nothing => say WarningMsg FaintCry st
+              Just kind =>
+                let spec = monsterSpec kind
+                    (hp, g3) = rollMonsterHp spec g2
+                    m : Monster
+                    m = MkMonster g.nextMonsterId kind c hp hp Awake []
+                    lvl' : Level
+                    lvl' = { monsters := lvl.monsters ++ [m] } lvl
+                    g' : Game
+                    g' = { rng := g3
+                         , nextMonsterId := g.nextMonsterId + 1 }
+                           (updateCurrentLevel (const lvl') g)
+                in say SystemMsg (MonsterAppears kind)
+                     ({ game := g' } st)
 
 attackMonster : Monster -> Step -> Step
 attackMonster m st =
@@ -1948,12 +1977,6 @@ playerAction (Throw i d) st = throwItem i d st
 playerAction (Zap i d) st = zap i d st
 playerAction Descend st = stairsAction Down st
 playerAction Ascend st = stairsAction Up st
-
-||| A monster may walk onto floor, corridors, stairs and closed doors.
-||| Opening a closed door is resolved in `chase`; secret and locked doors
-||| stay closed to monsters.
-monsterPassable : Tile -> Bool
-monsterPassable t = walkable t || t == Door Closed
 
 free : Game -> Coord -> Coord -> Bool
 free g from target =

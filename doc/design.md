@@ -1,7 +1,7 @@
 # lambda-rogue 設計書
 
-- Status: Draft 1.52（M5 スライス 40 完了。scare monster 巻物の床オーラ）
-- Date: 2026-11-25
+- Status: Draft 1.53（M5 スライス 41 完了。create monster の隣接配置）
+- Date: 2026-11-26
 - Target: Idris 2 0.8.0 / rc2 backend / termui 0.1.0 / rc2base 0.1.0
 - Reference: Rogue 5.4.4 (Berkeley Rogue) を第一候補とする
 - 関連: `doc/core-api.md`, `doc/rogue-reference.md`, `doc/persistence.md`
@@ -1920,6 +1920,18 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
   床の巻物が移動を妨げること、通常の巻物は妨げないこと、生成先の
   除外の 5 チェックを追加して全体は 1157 チェックになった。
 
+#### M5 スライス 41: create monster の隣接配置（完了）
+
+- [x] `createMonsterCells` をプレイヤーの隣接 8 マスに限定した。
+  上から下、左から右の順で、歩けるマスだけを候補にする。
+- [x] 原本 `S_CREATE` と同じリザーバーサンプリング
+  `chooseCreateCell` を追加した。候補ごとに `rnd(i)` を振り、
+  0 なら選択を置き換える。scare monster のマスは最初から候補外。
+- [x] 候補がないときは「You hear a faint cry of anguish in the
+  distance.」を出す。`ScrollFizzles` を `FaintCry` に置き換えた。
+- [x] `M4Test` に、生成位置が隣接していること、候補がないときの
+  メッセージと非生成の 3 チェックを追加して全体は 1160 チェックになった。
+
 ## 10. リスクと未決事項
 
 ### 10.1 リスク
@@ -2069,3 +2081,4 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 | D83 | 2026-11-24 | 食料感知の巻物は乱数を振らず、同階の床の食料だけを対象に 1 行動分の `DetectFood` を付ける。食料のマスは探索済みにし、食料があるときだけ巻物を識別する。 | 原本 `S_FDET` は `lvl_obj` の食料だけを走査し、見つかったときだけ `oi_know` を立てて「Your nose tingles and you smell food.--More--」を出す。見つからなければ「your nose tingles」だけで識別しない。従来の 30 ターン固定と常時識別は原本と異なっていた。 |
 | D84 | 2026-11-24 | ビーム杖（lightning / fire / cold / magic missile）はダメージ判定の前に対象の魔法セーヴを 1 回振り、成功時はダメージを振らない。lightning / fire / cold は対象を追跡状態にしてホールドを解き、magic missile は消える。ドラゴンの火炎反射はセーヴ失敗時だけに限る。 | 原本 `fire_bolt` は `save_throw(VS_MAGIC, tp)` を先に評価し、成功時は `hit_monster` を呼ばず「the <bolt|flame|ice> whizzes past the <monster>」を出す。`WS_MISSILE` も `do_motion` の後に同じセーヴを行い、成功時は「the missle vanishes with a puff of smoke」を出す。ドラゴンの反射判定はセーヴ失敗側の分岐にあるため、セーヴ成功時は反射しない。`runto` はセーヴされた対象を追跡状態にし、`ISHELD` を消す。 |
 | D85 | 2026-11-25 | `scare monster` の巻物は読むと「You hear maniacal laughter in the distance.」と表示するだけで、床に置いたマスにはモンスターが入れない。`create monster` の配置先からも除外する。再取得時に塵になる処理は持たない。 | 原本 `S_SCARE` の読み取り分岐は `msg("you hear maniacal laughter in the distance")` だけで、モンスターの状態を変えない。床の巻物は `chase.c` と `move.c` が `ch == SCROLL && o_which == S_SCARE` のマスを移動先から除外し、`S_CREATE` も同じマスを避ける。一方、拾い直しで塵になる処理は `pack.c` の `ISFOUND` に依存し、lambda-rogue の `Item` はこのフラグを持たないため今回は実装しない。 |
+| D86 | 2026-11-26 | `create monster` はプレイヤーの隣接 8 マスだけを候補にし、行優先の順でリザーバーサンプリングして 1 マスを選ぶ。候補がなければ「You hear a faint cry of anguish in the distance.」を出して生成しない。乱数は配置選択、種別、HP の順に消費する。 | 原本 `S_CREATE` は `hero.y - 1` から `hero.y + 1`、`hero.x - 1` から `hero.x + 1` の順に `step_ok` と scare monster の除外を調べ、`rnd(++i) == 0` で選択を置き換える。候補が 0 なら苦悶の声を出す。従来の「階全体から 1 マスを `pick` する」実装は、位置も乱数消費順も原本と異なっていた。 |

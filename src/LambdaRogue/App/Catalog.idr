@@ -280,7 +280,7 @@ messageTemplatesJa =
   , ("monster-resists", "怪物は抵抗した。")
   , ("monster-vanishes", "{}は消え去った。")
   , ("monster-appears", "{}が現れた！")
-  , ("scroll-fizzles", "巻物は不発に終わった。")
+  , ("faint-cry", "遠くで苦悶の声がかすかに聞こえた。")
   , ("miss-monster", "あなたは{}を外した。")
   , ("hit-monster", "あなたは{}に{}のダメージを与えた。{}")
   , ("kill-monster-plain", "あなたは{}を倒した。")
