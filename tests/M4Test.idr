@@ -366,13 +366,39 @@ scrollTests = do
   check "create monster adds a monster"
     (length (currentLevel outCreate.game).monsters == 1)
 
-  -- Monster-affecting scrolls.
+  -- Reading a scare-monster scroll only laughs; the scroll works when it
+  -- is left on the floor.
   let rat = MkMonster 1 Emu (MkCoord 6 5) 4 4 Chasing []
       gScare = setMonster rat (addToPack [scroll 318 ScrollScareMonster] base)
       outScare = step (Read 318) gScare
       scareM = monsterById 1 outScare.game
-  check "scare monster makes monsters flee"
-    (maybe False (\m => m.state == Fleeing && monsterHas Scared m) scareM)
+  check "reading a scare monster scroll only laughs"
+    (hasMessage "You hear maniacal laughter in the distance." outScare)
+  check "reading a scare monster scroll does not scare monsters"
+    (maybe False (\m => m.state == Chasing && not (monsterHas Scared m)) scareM)
+
+  let scareOnPath = floorItem 700 (Scroll ScrollScareMonster)
+                               (MkCoord 5 5) 0 False
+      gBlocked = setItems [scareOnPath] (setMonster rat base)
+      outBlocked = step Wait gBlocked
+  check "a floor scare scroll keeps a monster off its cell"
+    (maybe False (\m => m.pos /= MkCoord 5 5)
+       (monsterById 1 outBlocked.game))
+
+  let plainOnPath = floorItem 701 (Scroll ScrollMagicMapping)
+                               (MkCoord 5 5) 0 False
+      gPlainPath = setItems [plainOnPath] (setMonster rat base)
+      outPlainPath = step Wait gPlainPath
+  check "an ordinary floor scroll does not block a monster"
+    (maybe False (\m => m.pos == MkCoord 5 5)
+       (monsterById 1 outPlainPath.game))
+
+  check "create monster skips a cell with a scare scroll"
+    (not (elem (MkCoord 5 5)
+            (createMonsterCells (setItems [scareOnPath] base))))
+  check "create monster may use a cell with an ordinary scroll"
+    (elem (MkCoord 5 5)
+       (createMonsterCells (setItems [plainOnPath] base)))
 
   let gHold = setMonster rat (addToPack [scroll 319 ScrollHoldMonster] base)
       outHold = step (Read 319) gHold

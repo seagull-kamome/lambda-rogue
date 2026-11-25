@@ -135,7 +135,7 @@ data Msg
   | MapForms
   | MonstersFreeze
   | MonstersSleep
-  | MonstersFlee
+  | ManiacalLaughter
   | SenseFood
   | NoseTingles
   | NotWearingArmor
@@ -420,7 +420,7 @@ msgEn HandsGlowRed = "Your hands begin to glow red."
 msgEn MapForms = "A map of the level forms in your mind."
 msgEn MonstersFreeze = "The monsters freeze in place."
 msgEn MonstersSleep = "The monsters fall asleep."
-msgEn MonstersFlee = "The monsters turn to flee."
+msgEn ManiacalLaughter = "You hear maniacal laughter in the distance."
 msgEn SenseFood = "Your nose tingles and you smell food."
 msgEn NoseTingles = "Your nose tingles."
 msgEn NotWearingArmor = "You are not wearing armor."
@@ -623,7 +623,7 @@ msgKey HandsGlowRed = "hands-glow-red"
 msgKey MapForms = "map-forms"
 msgKey MonstersFreeze = "monsters-freeze"
 msgKey MonstersSleep = "monsters-sleep"
-msgKey MonstersFlee = "monsters-flee"
+msgKey ManiacalLaughter = "maniacal-laughter"
 msgKey SenseFood = "sense-food"
 msgKey NoseTingles = "nose-tingles"
 msgKey NotWearingArmor = "not-wearing-armor"
@@ -803,7 +803,7 @@ msgArgs HandsGlowRed = []
 msgArgs MapForms = []
 msgArgs MonstersFreeze = []
 msgArgs MonstersSleep = []
-msgArgs MonstersFlee = []
+msgArgs ManiacalLaughter = []
 msgArgs SenseFood = []
 msgArgs NoseTingles = []
 msgArgs NotWearingArmor = []
@@ -995,7 +995,7 @@ sampleMessages =
   , MapForms
   , MonstersFreeze
   , MonstersSleep
-  , MonstersFlee
+  , ManiacalLaughter
   , SenseFood
   , NoseTingles
   , NotWearingArmor

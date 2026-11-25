@@ -159,6 +159,15 @@ monsterCarriesMagic : Game -> MonsterId -> Bool
 monsterCarriesMagic g mid =
   any (\i => i.location == CarriedBy mid && isMagicalItem i) g.items
 
+||| True when a scroll of scare monster lies on the given floor cell.  The
+||| original keeps monsters from stepping onto such a cell, whether they
+||| are chasing, fleeing or moving at random.
+public export
+scareScrollAt : Game -> Coord -> Bool
+scareScrollAt g c =
+  any (\i => i.kind == Scroll ScrollScareMonster
+             && i.location == OnFloor g.depth c) g.items
+
 updateMonster : MonsterId -> (Monster -> Monster) -> Level -> Level
 updateMonster i f lvl =
   { monsters := map (\m => if m.id == i then f m else m) lvl.monsters } lvl
@@ -531,14 +540,21 @@ teleportMonster m st =
          in say SystemMsg (MonsterVanishes m.kind)
               ({ game := g' } st)
 
+public export
+createMonsterCells : Game -> List Coord
+createMonsterCells g =
+  let lvl = currentLevel g
+  in filter (\c => c /= g.player.pos
+                   && isNothing (monsterAt lvl c)
+                   && maybe False walkable (tileAt lvl.tiles c)
+                   && not (scareScrollAt g c))
+            (allWalkableCells lvl.tiles)
+
 createMonsterNear : Step -> Step
 createMonsterNear st =
   let g = st.game
       lvl = currentLevel g
-      cells = filter (\c => c /= g.player.pos
-                            && isNothing (monsterAt lvl c)
-                            && maybe False walkable (tileAt lvl.tiles c))
-                     (allWalkableCells lvl.tiles)
+      cells = createMonsterCells g
       (kindOpt, g1) = pick (spawnPool g.depth) g.rng
       (coordOpt, g2) = pick cells g1
   in case (kindOpt, coordOpt) of
@@ -1436,13 +1452,7 @@ applyScroll ScrollIdentifyRingOrWand st =
   identifyMessage "rings or wands"
     (identifyFirst isRingOrWandKind st.game) st
 applyScroll ScrollScareMonster st =
-  let g : Game
-      g = updateCurrentLevel
-            (\l => { monsters := map
-                       (\m => { state := Fleeing }
-                                (addMonsterStatus Scared 12 m)) l.monsters } l)
-            st.game
-  in say ItemMsg MonstersFlee ({ game := g } st)
+  say ItemMsg ManiacalLaughter st
 applyScroll ScrollFoodDetection st =
   let g0 = st.game
       cells = floorFoodCells g0
@@ -1955,6 +1965,7 @@ free g from target =
            Nothing => False)
      && target /= g.player.pos
      && isNothing (monsterAt lvl target)
+     && not (scareScrollAt g target)
 
 stepToward : Game -> Coord -> Coord -> Maybe Coord
 stepToward g from to =

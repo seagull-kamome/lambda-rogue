@@ -365,7 +365,7 @@ messageTemplatesJa =
   , ("map-forms", "この階の地図が頭に浮かんだ。")
   , ("monsters-freeze", "怪物たちが凍りついた。")
   , ("monsters-sleep", "怪物たちは眠りに落ちた。")
-  , ("monsters-flee", "怪物たちは逃げ出した。")
+  , ("maniacal-laughter", "遠くで狂った笑い声が聞こえた。")
   , ("sense-food", "鼻がむずむずして、食料の匂いがした。")
   , ("nose-tingles", "鼻がむずむずした。")
   , ("not-wearing-armor", "鎧を着ていない。")

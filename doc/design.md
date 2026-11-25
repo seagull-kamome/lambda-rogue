@@ -1,7 +1,7 @@
 # lambda-rogue 設計書
 
-- Status: Draft 1.51（M5 スライス 39 完了。ビーム杖の魔法セーヴ）
-- Date: 2026-11-24
+- Status: Draft 1.52（M5 スライス 40 完了。scare monster 巻物の床オーラ）
+- Date: 2026-11-25
 - Target: Idris 2 0.8.0 / rc2 backend / termui 0.1.0 / rc2base 0.1.0
 - Reference: Rogue 5.4.4 (Berkeley Rogue) を第一候補とする
 - 関連: `doc/core-api.md`, `doc/rogue-reference.md`, `doc/persistence.md`
@@ -1906,6 +1906,20 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
   `M5Test` の magic missile ダメージ検査をセーヴ失敗シードに更新し、
   全体は 1152 チェックになった。
 
+#### M5 スライス 40: scare monster 巻物の床オーラ（完了）
+
+- [x] `ScrollScareMonster` を読んだときの効果を、全モンスターを
+  `Fleeing` にする処理から「You hear maniacal laughter in the
+  distance.」の表示だけに変えた。
+- [x] 床にある `scare monster` の巻物のマスを `scareScrollAt` で判定し、
+  `free` に加えた。追跡・逃走・ランダム移動のどのモンスターも、
+  そのマスには入れない。
+- [x] `createMonsterCells` を切り出し、`create monster` の配置先からも
+  scare monster のマスを除外した。
+- [x] `M4Test` の scare monster テストを更新し、読んでも怖がらないこと、
+  床の巻物が移動を妨げること、通常の巻物は妨げないこと、生成先の
+  除外の 5 チェックを追加して全体は 1157 チェックになった。
+
 ## 10. リスクと未決事項
 
 ### 10.1 リスク
@@ -2054,3 +2068,4 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 | D82 | 2026-11-23 | 杖の cancellation は対象に永続の `Cancelled` 状態を付け、特殊攻撃・火炎放射・透明・擬態を無効化する。既存の状態異常と行動状態は残し、乱数は消費しない。 | 原本 `WS_CANCEL` は `ISCANC` を立て、`ISINVIS` と `CANHUH` を消し、`t_disguise` を元の種族に戻す。`ISCANC` は `fight.c` の特殊攻撃 switch とドラゴンの火炎判定を抑止する。一方、`ISCANC` は `ISHELD` や `ISSLOW` などを消さず、モンスターを起こしもしない。既存の「全状態を消して Chasing に戻す」実装は原本より強すぎた。 |
 | D83 | 2026-11-24 | 食料感知の巻物は乱数を振らず、同階の床の食料だけを対象に 1 行動分の `DetectFood` を付ける。食料のマスは探索済みにし、食料があるときだけ巻物を識別する。 | 原本 `S_FDET` は `lvl_obj` の食料だけを走査し、見つかったときだけ `oi_know` を立てて「Your nose tingles and you smell food.--More--」を出す。見つからなければ「your nose tingles」だけで識別しない。従来の 30 ターン固定と常時識別は原本と異なっていた。 |
 | D84 | 2026-11-24 | ビーム杖（lightning / fire / cold / magic missile）はダメージ判定の前に対象の魔法セーヴを 1 回振り、成功時はダメージを振らない。lightning / fire / cold は対象を追跡状態にしてホールドを解き、magic missile は消える。ドラゴンの火炎反射はセーヴ失敗時だけに限る。 | 原本 `fire_bolt` は `save_throw(VS_MAGIC, tp)` を先に評価し、成功時は `hit_monster` を呼ばず「the <bolt|flame|ice> whizzes past the <monster>」を出す。`WS_MISSILE` も `do_motion` の後に同じセーヴを行い、成功時は「the missle vanishes with a puff of smoke」を出す。ドラゴンの反射判定はセーヴ失敗側の分岐にあるため、セーヴ成功時は反射しない。`runto` はセーヴされた対象を追跡状態にし、`ISHELD` を消す。 |
+| D85 | 2026-11-25 | `scare monster` の巻物は読むと「You hear maniacal laughter in the distance.」と表示するだけで、床に置いたマスにはモンスターが入れない。`create monster` の配置先からも除外する。再取得時に塵になる処理は持たない。 | 原本 `S_SCARE` の読み取り分岐は `msg("you hear maniacal laughter in the distance")` だけで、モンスターの状態を変えない。床の巻物は `chase.c` と `move.c` が `ch == SCROLL && o_which == S_SCARE` のマスを移動先から除外し、`S_CREATE` も同じマスを避ける。一方、拾い直しで塵になる処理は `pack.c` の `ISFOUND` に依存し、lambda-rogue の `Item` はこのフラグを持たないため今回は実装しない。 |
