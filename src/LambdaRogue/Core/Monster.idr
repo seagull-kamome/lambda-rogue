@@ -265,6 +265,22 @@ public export
 rollMonsterHp : MonsterSpec -> Rng -> (Int32, Rng)
 rollMonsterHp spec = roll spec.level 8
 
+||| Turn a monster into another kind the way the original `new_monster`
+||| does for a polymorph: keep its id, position and carried items, reroll
+||| hit points, clear every status and wake it.  A new xeroc starts a fresh
+||| disguise.
+public export
+polymorphMonster : Monster -> MonsterKind -> Rng -> (Monster, Rng)
+polymorphMonster m kind g =
+  let spec = monsterSpec kind
+      (hp, g') = rollMonsterHp spec g
+      newStatuses : List Status
+      newStatuses = if hasAbility MimicObject kind
+                       then [MkStatus Mimicking 1]
+                       else []
+  in ({ kind := kind, hp := hp, maxHp := hp, state := Awake,
+        statuses := newStatuses } m, g')
+
 ||| Experience from killing a monster.  Rogue 5.4.4 adds a hit-point bonus
 ||| of 1/6 HP (1/8 for level-1 kinds), multiplied by 4 above six hit dice
 ||| and by 20 at ten or more.

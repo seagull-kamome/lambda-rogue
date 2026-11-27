@@ -5,6 +5,29 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Idris 2's rc2 compiler can grow to several gigabytes while checking the
+# largest core modules.  On a small machine that is enough to trigger the
+# system-wide OOM killer.  Run the whole verification inside a cgroup with a
+# hard memory cap so a runaway compiler is killed instead of the session.
+# Override the size with VERIFY_MEMORY_MAX (systemd syntax, e.g. 4G or 6G).
+if [ -z "${LAMBDA_ROGUE_VERIFY_SCOPED:-}" ]; then
+  memory_max="${VERIFY_MEMORY_MAX:-5G}"
+  if command -v systemd-run >/dev/null 2>&1 \
+     && systemd-run --user --scope --quiet \
+          -p MemoryMax="$memory_max" -p MemorySwapMax=0 true >/dev/null 2>&1; then
+    echo "== memory limit: $memory_max =="
+    export LAMBDA_ROGUE_VERIFY_SCOPED=1
+    exec systemd-run --user --scope --quiet \
+      -p MemoryMax="$memory_max" -p MemorySwapMax=0 "$0" "$@"
+  fi
+  # Fallback for systems without a user systemd instance.  A virtual-memory
+  # limit is coarser than a cgroup but still keeps the compiler from taking
+  # down the whole desktop.
+  echo "warning: systemd-run --user is unavailable; using a 5 GiB ulimit" >&2
+  ulimit -v 5242880
+  export LAMBDA_ROGUE_VERIFY_SCOPED=1
+fi
+
 # Prefer the compiler installed into the Idris prefix; a stale wrapper in
 # ~/.local/bin can otherwise shadow it and mismatch the support headers.
 if [ -z "${IDRIS2:-}" ] && [ -x "$HOME/.idris2/bin/idris2-rc2" ]; then

@@ -1,6 +1,6 @@
 # lambda-rogue 設計書
 
-- Status: Draft 1.53（M5 スライス 41 完了。create monster の隣接配置）
+- Status: Draft 1.54（M5 スライス 42 完了。polymorph の全種選択）
 - Date: 2026-11-26
 - Target: Idris 2 0.8.0 / rc2 backend / termui 0.1.0 / rc2base 0.1.0
 - Reference: Rogue 5.4.4 (Berkeley Rogue) を第一候補とする
@@ -1932,6 +1932,23 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 - [x] `M4Test` に、生成位置が隣接していること、候補がないときの
   メッセージと非生成の 3 チェックを追加して全体は 1160 チェックになった。
 
+#### M5 スライス 42: polymorph の全種選択と状態リセット（完了）
+
+- [x] `WandPolymorph` の種族選択を深度の出現プールから `monsterOrder`
+  全 26 種の一様選択に変えた。`rnd(26) + 'A'` と同じく深度帯を見ない。
+- [x] 変身後は ID と位置、所持品を保ち、HP を新しい種族の `レベル d8`
+  で振り直す。状態異常と行動状態はリセットし、`Awake` にする。
+- [x] 新しい種族が xeroc なら `Mimicking` を付け直す。擬態先は従来どおり
+  モンスター ID から決める。
+- [x] 対象が venus flytrap だったときはプレイヤーの `Held` を解く。
+  `vfHits` は原本と同じく変えない。`clearPlayerHold` を切り出した。
+- [x] `PolymorphTest` に位置・所持品・全種選択・HP 再振り・状態リセット・
+  xeroc 擬態・flytrap 解放の 9 チェックを追加して全体は 1169 チェックに
+  なった。
+- [x] M4Test に追加すると rc2 コンパイラのメモリが急増したため、
+  polymorph の既存 2 チェックも含めて `PolymorphTest` に分離した。
+  `verify.sh` は systemd-run の `MemoryMax` でビルド全体を制限する。
+
 ## 10. リスクと未決事項
 
 ### 10.1 リスク
@@ -2082,3 +2099,5 @@ M5 の優先順位は次の通り。残りの忠実性より、表示言語と�
 | D84 | 2026-11-24 | ビーム杖（lightning / fire / cold / magic missile）はダメージ判定の前に対象の魔法セーヴを 1 回振り、成功時はダメージを振らない。lightning / fire / cold は対象を追跡状態にしてホールドを解き、magic missile は消える。ドラゴンの火炎反射はセーヴ失敗時だけに限る。 | 原本 `fire_bolt` は `save_throw(VS_MAGIC, tp)` を先に評価し、成功時は `hit_monster` を呼ばず「the <bolt|flame|ice> whizzes past the <monster>」を出す。`WS_MISSILE` も `do_motion` の後に同じセーヴを行い、成功時は「the missle vanishes with a puff of smoke」を出す。ドラゴンの反射判定はセーヴ失敗側の分岐にあるため、セーヴ成功時は反射しない。`runto` はセーヴされた対象を追跡状態にし、`ISHELD` を消す。 |
 | D85 | 2026-11-25 | `scare monster` の巻物は読むと「You hear maniacal laughter in the distance.」と表示するだけで、床に置いたマスにはモンスターが入れない。`create monster` の配置先からも除外する。再取得時に塵になる処理は持たない。 | 原本 `S_SCARE` の読み取り分岐は `msg("you hear maniacal laughter in the distance")` だけで、モンスターの状態を変えない。床の巻物は `chase.c` と `move.c` が `ch == SCROLL && o_which == S_SCARE` のマスを移動先から除外し、`S_CREATE` も同じマスを避ける。一方、拾い直しで塵になる処理は `pack.c` の `ISFOUND` に依存し、lambda-rogue の `Item` はこのフラグを持たないため今回は実装しない。 |
 | D86 | 2026-11-26 | `create monster` はプレイヤーの隣接 8 マスだけを候補にし、行優先の順でリザーバーサンプリングして 1 マスを選ぶ。候補がなければ「You hear a faint cry of anguish in the distance.」を出して生成しない。乱数は配置選択、種別、HP の順に消費する。 | 原本 `S_CREATE` は `hero.y - 1` から `hero.y + 1`、`hero.x - 1` から `hero.x + 1` の順に `step_ok` と scare monster の除外を調べ、`rnd(++i) == 0` で選択を置き換える。候補が 0 なら苦悶の声を出す。従来の「階全体から 1 マスを `pick` する」実装は、位置も乱数消費順も原本と異なっていた。 |
+| D87 | 2026-11-26 | `polymorph` の杖は対象を 26 種すべてから一様に選び、HP を振り直して状態をリセットする。位置・ID・所持品は保ち、新しい種族が xeroc なら擬態を付け直す。対象が venus flytrap ならプレイヤーのホールドを解くが、`vfHits` は変えない。 | 原本 `WS_POLYMORPH` は `rnd(26) + 'A'` で種類を選び、`t_pack` と `t_oldch` を保存して `new_monster` を呼ぶ。`new_monster` はレベル・HP・AC・経験値・フラグを引き直し、`t_pack` を空にしてから保存値へ戻す。`X` なら `t_disguise = rnd_thing()` を設定する。対象が `F` のときは switch の前に `ISHELD` を消す。従来は深度プールから選び、状態を残して `Chasing` にし、擬態を必ず解除していた。 |
+| D88 | 2026-11-26 | polymorph のテストは `M4Test` ではなく専用の `PolymorphTest` に置く。`verify.sh` は systemd-run の `MemoryMax`（既定 5GiB）で検証全体を包み、使えない環境では `ulimit -v` にフォールバックする。 | Idris 2 rc2 コンパイラはテストモジュールが大きくなるとメモリ使用量が急増し、6.4GiB の環境で RSS 約 5.96GiB に達して OOM killer に殺された。ローカル名がレコードのフィールド名を隠していた `Game.idr` の箇所は改名で解消したが、M4Test に 9 チェックを足すと再発したため、テストを分離して 1 モジュールあたりの負荷を下げる。cgroup 制限により、将来同様の暴走が起きてもコンパイラだけが停止し、デスクトップ全体を巻き込まない。 |

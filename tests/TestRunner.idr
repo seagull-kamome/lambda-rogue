@@ -17,6 +17,7 @@ import MapViewTest
 import MouseTest
 import PerfTest
 import PersistTest
+import PolymorphTest
 import PlaybackTest
 import ReplayTest
 import SettingsTest
@@ -40,6 +41,7 @@ main = do
   M3Test.run
   M4Test.run
   M5Test.run
+  PolymorphTest.run
   MapViewTest.run
   MouseTest.run
   ReplayTest.run

@@ -469,18 +469,23 @@ beamTarget g d = go (beamCells g d)
         Just m => Just (c, m)
         Nothing => go cs
 
+||| Clear the player's hold.  The original `ISHELD` flag is shared by
+||| every hold source, so a single release frees the player completely.
+clearPlayerHold : Game -> Game
+clearPlayerHold g =
+  { player :=
+      { statuses := filter (\s => s.statusKind /= Held)
+                           g.player.statuses
+      } g.player
+  } g
+
 ||| The original clears `vf_hit` and releases the player's hold when a
 ||| venus flytrap dies.  The hold flag is shared with other sources, so
 ||| every `Held` status is cleared just as the original `ISHELD` is.
 releaseFlytrap : Monster -> Game -> Game
 releaseFlytrap m g =
   if m.kind == VenusFlytrap
-     then { vfHits := 0
-          , player :=
-              { statuses := filter (\s => s.statusKind /= Held)
-                                   g.player.statuses
-              } g.player
-          } g
+     then { vfHits := 0 } (clearPlayerHold g)
      else g
 
 damageMonster : Monster -> Int32 -> AttackLead -> Step -> Step
@@ -1629,21 +1634,21 @@ applyWand WandPolymorph dir st =
   case beamTarget st.game dir of
     Nothing => say WarningMsg BeamFizzles st
     Just (_, m) =>
-      let (kindOpt, rng1) = pick (spawnPool st.game.depth) st.game.rng
+      let (kindOpt, rng1) = pick monsterOrder st.game.rng
       in case kindOpt of
            Nothing => say WarningMsg BeamFizzles st
            Just kind =>
-             let spec = monsterSpec kind
-                 (hp, rng2) = rollMonsterHp spec rng1
+             let (m', rng2) = polymorphMonster m kind rng1
                  lvl = currentLevel st.game
                  lvl' : Level
-                 lvl' = revealMimicAt m.id
-                          (updateMonster m.id
-                            (\mm => { kind := kind, hp := hp, maxHp := hp,
-                                      state := Chasing } mm) lvl)
+                 lvl' = updateMonster m.id (const m') lvl
+                 g0 : Game
+                 g0 = { rng := rng2 }
+                        (updateCurrentLevel (const lvl') st.game)
                  g : Game
-                 g = { rng := rng2 }
-                       (updateCurrentLevel (const lvl') st.game)
+                 g = if m.kind == VenusFlytrap
+                        then clearPlayerHold g0
+                        else g0
              in say ItemMsg
                   (MonsterPolymorphs m.kind kind)
                   ({ game := g } st)

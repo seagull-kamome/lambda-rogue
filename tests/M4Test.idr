@@ -758,14 +758,6 @@ wandTests = do
        Just m => isCancelled m && not (isMimicking m)
        Nothing => False)
 
-  let outPoly = step (Zap 414 E)
-                  (setMonster bigRat
-                    (addToPack [wand 414 WandPolymorph 5] base))
-  check "polymorph announces a new monster"
-    (hasMessageContaining "becomes a" outPoly)
-  check "polymorph keeps one monster"
-    (length (currentLevel outPoly.game).monsters == 1)
-
 ringTests : IO ()
 ringTests = do
   let protection = ring 500 RingProtection 2 False
